@@ -91,7 +91,7 @@
     <!-- Loading Screen (Displayed first) -->
     <div id="loading-screen">
         <!-- Logo size increased and made responsive -->
-        <img src="funnytreegame.png" alt="Funny Tree Game Logo" class="w-64 sm:w-80 md:w-96 mb-8 animate-pulse" onerror="this.onerror=null; this.src='https://placehold.co/300x150/0A0A0A/ffffff?text=Funny+Tree+Game';">
+        <img src="funnytreegame.png" alt="Funny Tree Game Logo" class="w-64 sm:w-80 md:w-96 mb-8 animate-pulse" onerror="this.onerror=null; this.src='https://placehold.co/300x150/0A0A0A/0A0A0A?text=';">
         <div class="spinner"></div>
         <p class="mt-4 text-gray-400">Generating world, please wait... (it may be shayt btw)</p>
     </div>
@@ -553,7 +553,8 @@
         }
 
         // --- Tree Placement Logic ---
-        function placeTrees(vertices, terrainWidth, segments, heightScale, treeDensity, seed) {
+        function placeTrees(vertices, terrainWidth, segments, heightScale, seed) {
+            const treeDensity = parseFloat(document.getElementById('treeDensity').value) * 1000;
             const totalVertices = vertices.length / 3;
 
             prng.setSeed(seed + 100); 
