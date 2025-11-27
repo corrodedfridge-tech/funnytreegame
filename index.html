@@ -1,528 +1,546 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Funny Tree Game</title>
-    <!-- Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
-    <!-- Inter Font and Custom Styles --><style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-        body { font-family: 'Inter', sans-serif; overflow: hidden; }
-        
-        /* Loading Screen specific styles */
-        #loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #0A0A0A; /* Very dark background */
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            opacity: 1;
-            transition: opacity 0.5s ease-out; /* Smooth fade out */
-        }
-        .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid #10B981; /* Emerald */
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* Style the range inputs */
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 16px;
-            height: 16px;
-            background: #10B981; /* Emerald 500 */
-            cursor: pointer;
-            border-radius: 50%;
-            transition: background 0.2s;
-        }
-        input[type="range"]::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            background: #10B981;
-            cursor: pointer;
-            border-radius: 50%;
-        }
-        canvas { display: block; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funny Tree Game</title>
+    <!-- Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font and Custom Styles --><style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; overflow: hidden; }
+        
+        /* Loading Screen specific styles */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0A0A0A; /* Very dark background */
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+            transition: opacity 0.5s ease-out; /* Smooth fade out */
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #10B981; /* Emerald */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Style the range inputs */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #10B981; /* Emerald 500 */
+            cursor: pointer;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #10B981;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        canvas { display: block; }
 
-        /* Modal specific styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 50; /* Above three.js scene */
-        }
-        .modal-panel {
-            background-color: #1F2937; /* Gray 800 */
-            border: 1px solid rgba(55, 65, 81, 0.5); /* Gray 700 with transparency */
-            border-radius: 0.5rem;
-            padding: 1.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(8px);
-            max-width: 90%;
-            width: 28rem;
-            position: relative;
-        }
-    </style>
+        /* Modal specific styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50; /* Above three.js scene */
+        }
+        .modal-panel {
+            background-color: #1F2937; /* Gray 800 */
+            border: 1px solid rgba(55, 65, 81, 0.5); /* Gray 700 with transparency */
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            max-width: 90%;
+            width: 28rem;
+            position: relative;
+        }
+    </style>
 </head>
 <body class="bg-gray-900 text-white">
 
-    <!-- Loading Screen (Displayed first) -->
-    <div id="loading-screen">
-        <img src="funnytreeegame.png" alt="Funny Tree Game Logo" class="w-48 mb-8 animate-pulse">
-        <div class="spinner"></div>
-        <p class="mt-4 text-gray-400">Generating world, please wait...(might be bad)</p>
-    </div>
+    <!-- Loading Screen (Displayed first) -->
+    <div id="loading-screen">
+        <!-- Logo size increased and made responsive -->
+        <img src="funnytreeegame.png" alt="Funny Tree Game Logo" class="w-64 sm:w-80 md:w-96 mb-8 animate-pulse">
+        <div class="spinner"></div>
+        <p class="mt-4 text-gray-400">Generating world, please wait... (ensuring high detail)</p>
+    </div>
 
-    <!-- Container for 3D Scene --><div id="scene-container" class="absolute inset-0 z-0"></div>
+    <!-- Container for 3D Scene --><div id="scene-container" class="absolute inset-0 z-0"></div>
 
-    <!-- Open Parameters Button (Top Right) --><button id="openParamsBtn" class="absolute top-4 right-4 z-20 py-2 px-4 bg-blue-600 hover:bg-blue-500 rounded-md font-semibold transition-colors duration-200 shadow-lg shadow-blue-900/50">
-        Open Parameters
-    </button>
+    <!-- Open Parameters Button (Top Right) --><button id="openParamsBtn" class="absolute top-4 right-4 z-20 py-2 px-4 bg-blue-600 hover:bg-blue-500 rounded-md font-semibold transition-colors duration-200 shadow-lg shadow-blue-900/50">
+        Open Parameters
+    </button>
 
-    <!-- Controls Panel (Modal Pop-up) --><div id="controls-modal" class="modal-overlay hidden">
-        <div class="modal-panel">
-            <h2 class="text-2xl font-bold mb-4 text-emerald-400">Terrain Parameters</h2>
-            <p class="text-sm text-gray-400 mb-4">Adjust the sliders and click 'Generate' to create a new world. Use your mouse to navigate.</p>
+    <!-- Controls Panel (Modal Pop-up) --><div id="controls-modal" class="modal-overlay hidden">
+        <div class="modal-panel">
+            <h2 class="text-2xl font-bold mb-4 text-emerald-400">Terrain Parameters</h2>
+            <p class="text-sm text-gray-400 mb-4">Adjust the sliders and click 'Generate' to create a new world. Use your mouse to navigate.</p>
 
-            <!-- Parameter 1: Height Scale --><div class="mb-3">
-                <label for="heightScale" class="block text-sm font-medium mb-1 text-gray-300">Mountain Height: <span id="heightScaleValue" class="font-bold text-emerald-300">100</span></label>
-                <input type="range" id="heightScale" min="10" max="250" value="100" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
-            </div>
+            <!-- Parameter 1: Height Scale --><div class="mb-3">
+                <label for="heightScale" class="block text-sm font-medium mb-1 text-gray-300">Mountain Height: <span id="heightScaleValue" class="font-bold text-emerald-300">100</span></label>
+                <input type="range" id="heightScale" min="10" max="250" value="100" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
 
-            <!-- Parameter 2: Noise Frequency --><div class="mb-3">
-                <label for="frequency" class="block text-sm font-medium mb-1 text-gray-300">Roughness/Detail: <span id="frequencyValue" class="font-bold text-emerald-300">0.003</span></label>
-                <input type="range" id="frequency" min="0.001" max="0.1" step="0.001" value="0.003" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
-            </div>
+            <!-- Parameter 2: Noise Frequency --><div class="mb-3">
+                <label for="frequency" class="block text-sm font-medium mb-1 text-gray-300">Roughness/Detail: <span id="frequencyValue" class="font-bold text-emerald-300">0.003</span></label>
+                <input type="range" id="frequency" min="0.001" max="0.1" step="0.001" value="0.003" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
 
-            <!-- Parameter 3: Tree Density --><div class="mb-3">
-                <label for="treeDensity" class="block text-sm font-medium mb-1 text-gray-300">Tree Density (Thousands): <span id="treeDensityValue" class="font-bold text-emerald-300">2</span></label>
-                <input type="range" id="treeDensity" min="0" max="10" value="2" step="0.5" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
-            </div>
+            <!-- Parameter 3: Tree Density --><div class="mb-3">
+                <label for="treeDensity" class="block text-sm font-medium mb-1 text-gray-300">Tree Density (Thousands): <span id="treeDensityValue" class="font-bold text-emerald-300">2</span></label>
+                <input type="range" id="treeDensity" min="0" max="10" value="2" step="0.5" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
 
-            <!-- Parameter 4: Terrain Size --><div class="mb-4">
-                <label for="terrainSize" class="block text-sm font-medium mb-1 text-gray-300">Terrain Resolution (Vertices 200x200): <span id="terrainSizeValue" class="font-bold text-emerald-300">200</span></label>
-                <input type="range" id="terrainSize" min="50" max="200" value="200" step="10" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
-            </div>
+            <!-- Parameter 4: Terrain Size --><div class="mb-4">
+                <label for="terrainSize" class="block text-sm font-medium mb-1 text-gray-300">Terrain Resolution (Vertices 200x200): <span id="terrainSizeValue" class="font-bold text-emerald-300">200</span></label>
+                <input type="range" id="terrainSize" min="50" max="200" value="200" step="10" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
 
-            <hr class="border-gray-700 my-4">
+            <hr class="border-gray-700 my-4">
 
-            <!-- Sky Parameters --><h3 class="text-lg font-bold mb-3 text-blue-400">Sky & Sun Settings</h3>
-            
-            <div class="mb-3">
-                <label for="inclination" class="block text-sm font-medium mb-1 text-gray-300">Sun Height (Day/Night): <span id="inclinationValue" class="font-bold text-blue-300">0.49</span></label>
-                <input type="range" id="inclination" min="0" max="0.5" step="0.01" value="0.49" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
-            </div>
+            <!-- Sky Parameters --><h3 class="text-lg font-bold mb-3 text-blue-400">Sky & Sun Settings</h3>
+            
+            <div class="mb-3">
+                <label for="inclination" class="block text-sm font-medium mb-1 text-gray-300">Sun Height (Day/Night): <span id="inclinationValue" class="font-bold text-blue-300">0.49</span></label>
+                <input type="range" id="inclination" min="0" max="0.5" step="0.01" value="0.49" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
 
-            <div class="mb-4">
-                <label for="azimuth" class="block text-sm font-medium mb-1 text-gray-300">Sun Direction: <span id="azimuthValue" class="font-bold text-blue-300">0.25</span></label>
-                <input type="range" id="azimuth" min="0" max="1" step="0.01" value="0.25" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
-            </div>
+            <div class="mb-4">
+                <label for="azimuth" class="block text-sm font-medium mb-1 text-gray-300">Sun Direction: <span id="azimuthValue" class="font-bold text-blue-300">0.25</span></label>
+                <input type="range" id="azimuth" min="0" max="1" step="0.01" value="0.25" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
 
-            <!-- Generate and Close Buttons --><div class="flex justify-between gap-4 mt-6">
-                <button id="generateBtn" class="flex-1 py-2 px-4 bg-emerald-600 hover:bg-emerald-500 rounded-md font-semibold transition-colors duration-200 shadow-md shadow-emerald-900/50">
-                    Generate New Terrain
-                </button>
-                <button id="closeParamsBtn" class="flex-1 py-2 px-4 bg-gray-600 hover:bg-gray-500 rounded-md font-semibold transition-colors duration-200 shadow-md shadow-gray-900/50">
-                    Close
-                </button>
-            </div>
-        </div>
-    </div>
+            <!-- Generate and Close Buttons --><div class="flex justify-between gap-4 mt-6">
+                <button id="generateBtn" class="flex-1 py-2 px-4 bg-emerald-600 hover:bg-emerald-500 rounded-md font-semibold transition-colors duration-200 shadow-md shadow-emerald-900/50">
+                    Generate New Terrain
+                </button>
+                <button id="closeParamsBtn" class="flex-1 py-2 px-4 bg-gray-600 hover:bg-gray-500 rounded-md font-semibold transition-colors duration-200 shadow-md shadow-gray-900/50">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
 
-    <!-- 1. Load THREE.js Core Globally --><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- 2. Load Examples Globally (using /js/ path, which attaches them to THREE) --><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Sky.js"></script>
+    <!-- 1. Load THREE.js Core Globally --><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- 2. Load Examples Globally (using /js/ path, which attaches them to THREE) --><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Sky.js"></script>
 
-    <!-- MAIN JAVASCRIPT LOGIC (using global references) --><script>
-        // --- Global three.js Variables ---
-        let scene, camera, renderer, controls;
-        let terrainMesh, treeGroup;
-        let sky, sun; 
-        const sceneContainer = document.getElementById('scene-container');
-        let sunLight; 
+    <!-- MAIN JAVASCRIPT LOGIC (using global references) --><script>
+        // --- Global three.js Variables ---
+        let scene, camera, renderer, controls;
+        let terrainMesh, treeGroup;
+        let sky, sun; 
+        const sceneContainer = document.getElementById('scene-container');
+        let sunLight; 
+        // Minimum time in milliseconds the loading screen must be visible after generation finishes.
+        const MINIMUM_LOADING_TIME = 3000; // 3 seconds minimum wait time
 
-        // --- Perlin Noise Implementation (Simplified) ---
-        function PseudoRandom(seed) {
-            this.seed = seed;
-            this.random = function() {
-                this.seed = (this.seed * 9301 + 49297) % 233280;
-                return this.seed / 233280.0;
-            };
-            this.setSeed = function(newSeed) {
-                this.seed = newSeed;
-            };
-        }
+        // --- Perlin Noise Implementation (Simplified) ---
+        function PseudoRandom(seed) {
+            this.seed = seed;
+            this.random = function() {
+                this.seed = (this.seed * 9301 + 49297) % 233280;
+                return this.seed / 233280.0;
+            };
+            this.setSeed = function(newSeed) {
+                this.seed = newSeed;
+            };
+        }
 
-        const prng = new PseudoRandom(Math.random() * 10000);
+        const prng = new PseudoRandom(Math.random() * 10000);
 
-        function getNoiseValue(x, y, frequency, octaves, seed) {
-            prng.setSeed(seed);
-            let total = 0;
-            let maxAmp = 0;
-            let amp = 1;
-            let freq = frequency;
+        function getNoiseValue(x, y, frequency, octaves, seed) {
+            prng.setSeed(seed);
+            let total = 0;
+            let maxAmp = 0;
+            let amp = 1;
+            let freq = frequency;
 
-            for (let i = 0; i < octaves; i++) {
-                let noiseX = Math.floor(x * freq + prng.random() * 100);
-                let noiseY = Math.floor(y * freq + prng.random() * 100);
-                
-                let baseVal = new PseudoRandom(noiseX * 1000 + noiseY + seed).random();
-                
-                total += baseVal * amp;
-                maxAmp += amp;
-                amp *= 0.5; 
-                freq *= 2.0; 
-            }
+            for (let i = 0; i < octaves; i++) {
+                let noiseX = Math.floor(x * freq + prng.random() * 100);
+                let noiseY = Math.floor(y * freq + prng.random() * 100);
+                
+                let baseVal = new PseudoRandom(noiseX * 1000 + noiseY + seed).random();
+                
+                total += baseVal * amp;
+                maxAmp += amp;
+                amp *= 0.5; 
+                freq *= 2.0; 
+            }
 
-            return total / maxAmp; 
-        }
+            return total / maxAmp; 
+        }
 
-        // --- Initialization ---
-        function init() {
-            // Scene setup
-            scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x87CEEB, 0.001);
+        // --- Initialization ---
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x87CEEB, 0.001);
 
-            // Camera setup
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 3000);
-            camera.position.set(0, 150, 250);
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 3000);
+            camera.position.set(0, 150, 250);
 
-            // Renderer setup
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            sceneContainer.appendChild(renderer.domElement);
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 0.5;
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            sceneContainer.appendChild(renderer.domElement);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 0.5;
 
-            // Controls
-            controls = new THREE.OrbitControls(camera, renderer.domElement); 
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.screenSpacePanning = false;
-            controls.minDistance = 50;
-            controls.maxDistance = 1000;
-            controls.maxPolarAngle = Math.PI / 2 - 0.1; 
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement); 
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = false;
+            controls.minDistance = 50;
+            controls.maxDistance = 1000;
+            controls.maxPolarAngle = Math.PI / 2 - 0.1; 
 
-            // Initialize groups
-            treeGroup = new THREE.Group();
-            scene.add(treeGroup);
+            // Initialize groups
+            treeGroup = new THREE.Group();
+            scene.add(treeGroup);
 
-            // Initialize Sky
-            initSky();
+            // Initialize Sky
+            initSky();
 
-            // Event listeners
-            window.addEventListener('resize', onWindowResize, false);
-            document.getElementById('generateBtn').addEventListener('click', () => document.getElementById('controls-modal').classList.add('hidden') || generateTerrain(true));
-            document.getElementById('openParamsBtn').addEventListener('click', () => document.getElementById('controls-modal').classList.remove('hidden'));
-            document.getElementById('closeParamsBtn').addEventListener('click', () => document.getElementById('controls-modal').classList.add('hidden'));
-            setupControlListeners();
-            
-            // NOTE: generateTerrain(true) is now called in startApplication() to ensure loading screen is rendered first.
-        }
+            // Event listeners
+            window.addEventListener('resize', onWindowResize, false);
+            document.getElementById('generateBtn').addEventListener('click', () => document.getElementById('controls-modal').classList.add('hidden') || generateTerrain(true));
+            document.getElementById('openParamsBtn').addEventListener('click', () => document.getElementById('controls-modal').classList.remove('hidden'));
+            document.getElementById('closeParamsBtn').addEventListener('click', () => document.getElementById('controls-modal').classList.add('hidden'));
+            setupControlListeners();
+        }
 
-        // --- Sky Initialization ---
-        function initSky() {
-            sky = new THREE.Sky(); 
-            sky.scale.setScalar(450000);
-            scene.add(sky);
+        // --- Sky Initialization ---
+        function initSky() {
+            sky = new THREE.Sky(); 
+            sky.scale.setScalar(450000);
+            scene.add(sky);
 
-            sun = new THREE.Vector3();
+            sun = new THREE.Vector3();
 
-            if (sky.material && sky.material.uniforms) {
-                const skyUniforms = sky.material.uniforms;
-                if (skyUniforms['turbidity']) skyUniforms['turbidity'].value = 10;
-                if (skyUniforms['rayleigh']) skyUniforms['rayleigh'].value = 3;
-                if (skyUniforms['mieCoefficient']) skyUniforms['mieCoefficient'].value = 0.005;
-                if (skyUniforms['mieDirectionalG']) skyUniforms['mieDirectionalG'].value = 0.8;
-                if (skyUniforms['exposure']) skyUniforms['exposure'].value = 0.3; 
-            }
-            
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-            scene.add(ambientLight);
+            if (sky.material && sky.material.uniforms) {
+                const skyUniforms = sky.material.uniforms;
+                if (skyUniforms['turbidity']) skyUniforms['turbidity'].value = 10;
+                if (skyUniforms['rayleigh']) skyUniforms['rayleigh'].value = 3;
+                if (skyUniforms['mieCoefficient']) skyUniforms['mieCoefficient'].value = 0.005;
+                if (skyUniforms['mieDirectionalG']) skyUniforms['mieDirectionalG'].value = 0.8;
+                if (skyUniforms['exposure']) skyUniforms['exposure'].value = 0.3; 
+            }
+            
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
 
-            // Add Directional Light for Sun
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
-            directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-            directionalLight.shadow.camera.near = 1;
-            directionalLight.shadow.camera.far = 1500;
-            directionalLight.shadow.camera.left = -500;
-            directionalLight.shadow.camera.right = 500;
-            directionalLight.shadow.camera.top = 500;
-            directionalLight.shadow.camera.bottom = -500;
-            scene.add(directionalLight);
-            sunLight = directionalLight;
+            // Add Directional Light for Sun
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            directionalLight.shadow.camera.near = 1;
+            directionalLight.shadow.camera.far = 1500;
+            directionalLight.shadow.camera.left = -500;
+            directionalLight.shadow.camera.right = 500;
+            directionalLight.shadow.camera.top = 500;
+            directionalLight.shadow.camera.bottom = -500;
+            scene.add(directionalLight);
+            sunLight = directionalLight;
 
-            updateSun();
-        }
+            updateSun();
+        }
 
-        function updateSun() {
-            const inclination = parseFloat(document.getElementById('inclination').value);
-            const azimuth = parseFloat(document.getElementById('azimuth').value);
+        function updateSun() {
+            const inclination = parseFloat(document.getElementById('inclination').value);
+            const azimuth = parseFloat(document.getElementById('azimuth').value);
 
-            const phi = Math.PI * (1 - inclination * 2); 
-            const theta = 2 * Math.PI * (azimuth - 0.5);
+            const phi = Math.PI * (1 - inclination * 2); 
+            const theta = 2 * Math.PI * (azimuth - 0.5);
 
-            sun.setFromSphericalCoords(1, phi, theta);
-            
-            if (sky && sky.material && sky.material.uniforms && sky.material.uniforms['sunPosition']) {
-                sky.material.uniforms[ 'sunPosition' ].value.copy(sun);
-            }
+            sun.setFromSphericalCoords(1, phi, theta);
+            
+            if (sky && sky.material && sky.material.uniforms && sky.material.uniforms['sunPosition']) {
+                sky.material.uniforms[ 'sunPosition' ].value.copy(sun);
+            }
 
-            sunLight.position.copy(sun).multiplyScalar(500); 
-            sunLight.lookAt(0,0,0); 
-        }
+            sunLight.position.copy(sun).multiplyScalar(500); 
+            sunLight.lookAt(0,0,0); 
+        }
 
-        // --- Core Generation Logic ---
-        function generateTerrain(randomizeSeed = false) {
-            // Get parameters from UI
-            const width = 512;
-            const depth = 512;
-            const segments = parseInt(document.getElementById('terrainSize').value);
-            const heightScale = parseFloat(document.getElementById('heightScale').value);
-            const frequency = parseFloat(document.getElementById('frequency').value); 
-            const treeDensity = parseFloat(document.getElementById('treeDensity').value) * 1000;
-            
-            const noiseSeed = randomizeSeed ? (Math.random() * 100000) : (terrainMesh ? terrainMesh.userData.seed : 0);
-            
-            // 1. Remove old terrain and trees
-            if (terrainMesh) {
-                scene.remove(terrainMesh);
-                terrainMesh.geometry.dispose();
-                terrainMesh.material.dispose();
-            }
-            if (treeGroup) {
-                treeGroup.children.forEach(c => {
-                    if (c.geometry) c.geometry.dispose();
-                    if (c.material) c.material.dispose();
-                });
-                treeGroup.clear();
-            }
+        // --- Core Generation Logic ---
+        function generateTerrain(randomizeSeed = false) {
+            // Get parameters from UI
+            const width = 512;
+            const depth = 512;
+            const segments = parseInt(document.getElementById('terrainSize').value);
+            const heightScale = parseFloat(document.getElementById('heightScale').value);
+            const frequency = parseFloat(document.getElementById('frequency').value); 
+            const treeDensity = parseFloat(document.getElementById('treeDensity').value) * 1000;
+            
+            const noiseSeed = randomizeSeed ? (Math.random() * 100000) : (terrainMesh ? terrainMesh.userData.seed : 0);
+            
+            // 1. Remove old terrain and trees
+            if (terrainMesh) {
+                scene.remove(terrainMesh);
+                terrainMesh.geometry.dispose();
+                terrainMesh.material.dispose();
+            }
+            if (treeGroup) {
+                treeGroup.children.forEach(c => {
+                    if (c.geometry) c.geometry.dispose();
+                    if (c.material) c.material.dispose();
+                });
+                treeGroup.clear();
+            }
 
-            // 2. Create new plane geometry
-            const geometry = new THREE.PlaneGeometry(width, depth, segments - 1, segments - 1);
-            geometry.rotateX(-Math.PI / 2); // Orient to ground plane
+            // 2. Create new plane geometry
+            const geometry = new THREE.PlaneGeometry(width, depth, segments - 1, segments - 1);
+            geometry.rotateX(-Math.PI / 2); // Orient to ground plane
 
-            const vertices = geometry.attributes.position.array;
-            const colors = [];
-            const color = new THREE.Color();
-            
-            const caveFactor = 0.5; 
+            const vertices = geometry.attributes.position.array;
+            const colors = [];
+            const color = new THREE.Color();
+            
+            const caveFactor = 0.5; 
 
-            // 3. Apply heightmap and color
-            for (let i = 0; i < vertices.length / 3; i++) {
-                const x = vertices[i * 3];
-                const z = vertices[i * 3 + 2];
+            // 3. Apply heightmap and color
+            for (let i = 0; i < vertices.length / 3; i++) {
+                const x = vertices[i * 3];
+                const z = vertices[i * 3 + 2];
 
-                let height = getNoiseValue(x, z, frequency, 6, noiseSeed) * heightScale; 
-                let valleyNoise = getNoiseValue(x, z, frequency / 4, 1, noiseSeed + 1) * heightScale * caveFactor;
-                height = height - valleyNoise;
+                let height = getNoiseValue(x, z, frequency, 6, noiseSeed) * heightScale; 
+                let valleyNoise = getNoiseValue(x, z, frequency / 4, 1, noiseSeed + 1) * heightScale * caveFactor;
+                height = height - valleyNoise;
 
-                vertices[i * 3 + 1] = height;
+                vertices[i * 3 + 1] = height;
 
-                // Clamp coloringHeight at 0 to prevent terrain color change underwater
-                const coloringHeight = Math.max(height, 0); 
-                
-                // Color based on height (Sand/Grass/Earth/Rock/Snow)
-                if (coloringHeight < 10) { 
-                    // Y=0 to Y=10: Sand (0xd2b48c) to Grass (0x38761d)
-                    color.set(0xd2b48c).lerp(new THREE.Color(0x38761d), coloringHeight / 10);
-                } else if (coloringHeight < 60) { 
-                    // Y=10 to Y=60: Grass (0x38761d) to Earth (0x8B4513)
-                    color.set(0x38761d).lerp(new THREE.Color(0x8B4513), (coloringHeight - 10) / 50); 
-                } else if (coloringHeight < 150) {
-                    // Y=60 to Y=150: Earth (0x8B4513) to Rock (0x808080)
-                    color.set(0x8B4513).lerp(new THREE.Color(0x808080), (coloringHeight - 60) / 90); 
-                } else {
-                    // Y>150: Rock (0x808080) to Snow (0xffffff)
-                    color.set(0x808080).lerp(new THREE.Color(0xffffff), (coloringHeight - 150) / 100); 
-                }
-                
-                colors.push(color.r, color.g, color.b);
-            }
-            
-            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-            geometry.computeVertexNormals();
-            geometry.attributes.position.needsUpdate = true;
+                // Clamp coloringHeight at 0 to prevent terrain color change underwater
+                const coloringHeight = Math.max(height, 0); 
+                
+                // Color based on height (Sand/Grass/Earth/Rock/Snow)
+                if (coloringHeight < 10) { 
+                    // Y=0 to Y=10: Sand (0xd2b48c) to Grass (0x38761d)
+                    color.set(0xd2b48c).lerp(new THREE.Color(0x38761d), coloringHeight / 10);
+                } else if (coloringHeight < 60) { 
+                    // Y=10 to Y=60: Grass (0x38761d) to Earth (0x8B4513)
+                    color.set(0x38761d).lerp(new THREE.Color(0x8B4513), (coloringHeight - 10) / 50); 
+                } else if (coloringHeight < 150) {
+                    // Y=60 to Y=150: Earth (0x8B4513) to Rock (0x808080)
+                    color.set(0x8B4513).lerp(new THREE.Color(0x808080), (coloringHeight - 60) / 90); 
+                } else {
+                    // Y>150: Rock (0x808080) to Snow (0xffffff)
+                    color.set(0x808080).lerp(new THREE.Color(0xffffff), (coloringHeight - 150) / 100); 
+                }
+                
+                colors.push(color.r, color.g, color.b);
+            }
+            
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            geometry.computeVertexNormals();
+            geometry.attributes.position.needsUpdate = true;
 
-            // 4. Create Mesh
-            const material = new THREE.MeshPhongMaterial({ 
-                vertexColors: true, 
-                shininess: 5,
-            });
-            terrainMesh = new THREE.Mesh(geometry, material);
-            terrainMesh.receiveShadow = true;
-            terrainMesh.castShadow = true;
-            terrainMesh.userData.seed = noiseSeed; 
-            scene.add(terrainMesh);
-            
-            // 5. Place Trees
-            if (treeDensity > 0) {
-                placeTrees(vertices, width, segments, heightScale, treeDensity, noiseSeed);
-            }
+            // 4. Create Mesh
+            const material = new THREE.MeshPhongMaterial({ 
+                vertexColors: true, 
+                shininess: 5,
+            });
+            terrainMesh = new THREE.Mesh(geometry, material);
+            terrainMesh.receiveShadow = true;
+            terrainMesh.castShadow = true;
+            terrainMesh.userData.seed = noiseSeed; 
+            scene.add(terrainMesh);
+            
+            // 5. Place Trees
+            if (treeDensity > 0) {
+                placeTrees(vertices, width, segments, heightScale, treeDensity, noiseSeed);
+            }
 
-            // 6. Add Water Plane (Always fixed at y=0)
-            let waterMesh = scene.getObjectByName('waterPlane');
-            if (!waterMesh) {
-                const waterGeometry = new THREE.PlaneGeometry(width * 2, depth * 2);
-                waterGeometry.rotateX(-Math.PI / 2);
-                const waterMaterial = new THREE.MeshBasicMaterial({ color: 0x4fc3f7, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
-                waterMesh = new THREE.Mesh(waterGeometry, waterMaterial);
-                waterMesh.name = 'waterPlane';
-                scene.add(waterMesh);
-            }
-        }
+            // 6. Add Water Plane (Always fixed at y=0)
+            let waterMesh = scene.getObjectByName('waterPlane');
+            if (!waterMesh) {
+                const waterGeometry = new THREE.PlaneGeometry(width * 2, depth * 2);
+                waterGeometry.rotateX(-Math.PI / 2);
+                const waterMaterial = new THREE.MeshBasicMaterial({ color: 0x4fc3f7, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
+                waterMesh = new THREE.Mesh(waterGeometry, waterMaterial);
+                waterMesh.name = 'waterPlane';
+                scene.add(waterMesh);
+            }
+        }
 
-        // --- Tree Placement Logic ---
-        function placeTrees(vertices, terrainWidth, segments, heightScale, treeDensity, seed) {
-            const totalVertices = vertices.length / 3;
+        // --- Tree Placement Logic ---
+        function placeTrees(vertices, terrainWidth, segments, heightScale, treeDensity, seed) {
+            const totalVertices = vertices.length / 3;
 
-            prng.setSeed(seed + 100); 
+            prng.setSeed(seed + 100); 
 
-            const trunkGeometry = new THREE.CylinderGeometry(1, 1, 10, 8);
-            const crownGeometry = new THREE.ConeGeometry(5, 10, 8);
-            const trunkMaterial = new THREE.MeshPhongMaterial({ color: 0x654321 });
-            const crownMaterial = new THREE.MeshPhongMaterial({ color: 0x228B22 });
+            // Reusing geometry and material is important for performance
+            const trunkGeometry = new THREE.CylinderGeometry(1, 1, 10, 8);
+            const crownGeometry = new THREE.ConeGeometry(5, 10, 8);
+            const trunkMaterial = new THREE.MeshPhongMaterial({ color: 0x654321 });
+            const crownMaterial = new THREE.MeshPhongMaterial({ color: 0x228B22 });
 
-            treeGroup.children.forEach(c => {
-                if (c.geometry) c.geometry.dispose();
-                if (c.material) c.material.dispose();
-            });
-            treeGroup.clear();
+            treeGroup.children.forEach(c => {
+                if (c.geometry) c.geometry.dispose();
+                if (c.material) c.material.dispose();
+            });
+            treeGroup.clear();
 
-            const slopeThreshold = 0.5;
+            const slopeThreshold = 0.5;
 
-            for (let i = 0; i < treeDensity; i++) {
-                const vertexIndex = Math.floor(prng.random() * totalVertices);
-                
-                const x = vertices[vertexIndex * 3];
-                const y = vertices[vertexIndex * 3 + 1];
-                const z = vertices[vertexIndex * 3 + 2];
+            for (let i = 0; i < treeDensity; i++) {
+                const vertexIndex = Math.floor(prng.random() * totalVertices);
+                
+                const x = vertices[vertexIndex * 3];
+                const y = vertices[vertexIndex * 3 + 1];
+                const z = vertices[vertexIndex * 3 + 2];
 
-                // Get the normal vector at this vertex to check slope
-                const normalY = terrainMesh.geometry.attributes.normal.array[vertexIndex * 3 + 1];
-                const angle = Math.acos(normalY);
+                // NOTE: This requires computeVertexNormals to have run in generateTerrain
+                const normalY = terrainMesh.geometry.attributes.normal.array[vertexIndex * 3 + 1];
+                const angle = Math.acos(normalY);
 
-                // Check for valid tree placement: above water, not too high, not too steep
-                if (y < 10 || y > heightScale * 0.7 || angle > slopeThreshold) continue; 
-                
-                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-                trunk.position.set(x, y + 5, z); 
-                trunk.castShadow = true;
-                trunk.receiveShadow = true;
-                
-                const crown = new THREE.Mesh(crownGeometry, crownMaterial);
-                crown.position.set(x, y + 15, z);
-                crown.castShadow = true;
-                crown.receiveShadow = true;
+                // Check for valid tree placement: above water, on grass/low earth, not too steep
+                if (y < 5 || y > heightScale * 0.4 || angle > slopeThreshold) continue; 
+                
+                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                trunk.position.set(x, y + 5, z); 
+                trunk.castShadow = true;
+                trunk.receiveShadow = true;
+                
+                const crown = new THREE.Mesh(crownGeometry, crownMaterial);
+                crown.position.set(x, y + 15, z);
+                crown.castShadow = true;
+                crown.receiveShadow = true;
 
-                treeGroup.add(trunk);
-                treeGroup.add(crown);
-            }
-        }
+                treeGroup.add(trunk);
+                treeGroup.add(crown);
+            }
+            // Dispose of local geometry/material instances after placing trees to prevent memory leaks
+            trunkGeometry.dispose();
+            crownGeometry.dispose();
+            trunkMaterial.dispose();
+            crownMaterial.dispose();
+        }
 
-        // --- UI and Event Handling ---
-        function setupControlListeners() {
-            const terrainParams = ['heightScale', 'frequency', 'treeDensity', 'terrainSize'];
-            terrainParams.forEach(id => {
-                const input = document.getElementById(id);
-                const valueSpan = document.getElementById(id + 'Value');
-                
-                input.addEventListener('input', () => {
-                    valueSpan.textContent = (id === 'frequency' || id === 'inclination' || id === 'azimuth') ? parseFloat(input.value).toFixed(3) : input.value;
-                });
-            });
+        // --- UI and Event Handling ---
+        function setupControlListeners() {
+            const terrainParams = ['heightScale', 'frequency', 'treeDensity', 'terrainSize'];
+            terrainParams.forEach(id => {
+                const input = document.getElementById(id);
+                const valueSpan = document.getElementById(id + 'Value');
+                
+                input.addEventListener('input', () => {
+                    valueSpan.textContent = (id === 'frequency' || id === 'inclination' || id === 'azimuth') ? parseFloat(input.value).toFixed(3) : input.value;
+                });
+            });
 
-            const skyParams = ['inclination', 'azimuth'];
-            skyParams.forEach(id => {
-                const input = document.getElementById(id);
-                const valueSpan = document.getElementById(id + 'Value');
-                
-                input.addEventListener('input', () => {
-                    valueSpan.textContent = parseFloat(input.value).toFixed(2);
-                    updateSun();
-                });
-            });
+            const skyParams = ['inclination', 'azimuth'];
+            skyParams.forEach(id => {
+                const input = document.getElementById(id);
+                const valueSpan = document.getElementById(id + 'Value');
+                
+                input.addEventListener('input', () => {
+                    valueSpan.textContent = parseFloat(input.value).toFixed(2);
+                    updateSun();
+                });
+            });
 
-            // Set initial display values
-            document.getElementById('heightScaleValue').textContent = document.getElementById('heightScale').value;
-            document.getElementById('frequencyValue').textContent = parseFloat(document.getElementById('frequency').value).toFixed(3);
-            document.getElementById('treeDensityValue').textContent = document.getElementById('treeDensity').value;
-            document.getElementById('terrainSizeValue').textContent = document.getElementById('terrainSize').value;
-            document.getElementById('inclinationValue').textContent = parseFloat(document.getElementById('inclination').value).toFixed(2);
-            document.getElementById('azimuthValue').textContent = parseFloat(document.getElementById('azimuth').value).toFixed(2);
-        }
+            // Set initial display values
+            document.getElementById('heightScaleValue').textContent = document.getElementById('heightScale').value;
+            document.getElementById('frequencyValue').textContent = parseFloat(document.getElementById('frequency').value).toFixed(3);
+            document.getElementById('treeDensityValue').textContent = document.getElementById('treeDensity').value;
+            document.getElementById('terrainSizeValue').textContent = document.getElementById('terrainSize').value;
+            document.getElementById('inclinationValue').textContent = parseFloat(document.getElementById('inclination').value).toFixed(2);
+            document.getElementById('azimuthValue').textContent = parseFloat(document.getElementById('azimuth').value).toFixed(2);
+        }
 
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
 
-        // --- Loading Screen Logic ---
-        function hideLoadingScreen() {
-            const loadingScreen = document.getElementById('loading-screen');
-            if (loadingScreen) {
-                loadingScreen.style.opacity = '0';
-                // FIX: Immediately disable pointer events so controls and buttons are clickable
-                loadingScreen.style.pointerEvents = 'none'; 
-                
-                // Remove the element from the flow after the fade-out transition
-                setTimeout(() => loadingScreen.classList.add('hidden'), 500); 
-            }
-        }
-        
-        function startApplication() {
-            // 1. Initialize three.js components (camera, renderer, controls, sky)
-            init(); 
-            
-            // 2. Generate the first terrain (this is the heavy synchronous part)
-            generateTerrain(true);
-            
-            // 3. Hide loading screen now that world is ready
-            hideLoadingScreen();
-            
-            // 4. Start the render loop
-            animate();
-        }
+        // --- Loading Screen Logic ---
+        function hideLoadingScreen() {
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen) {
+                loadingScreen.style.opacity = '0';
+                // Immediately disable pointer events so controls and buttons are clickable
+                loadingScreen.style.pointerEvents = 'none'; 
+                
+                // Remove the element from the flow after the fade-out transition
+                setTimeout(() => loadingScreen.classList.add('hidden'), 500); 
+            }
+        }
+        
+        function startApplication() {
+            // Record the time when the generation process starts
+            const startTime = performance.now();
 
-        // --- Animation Loop ---
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-        }
+            // 1. Initialize three.js components (camera, renderer, controls, sky)
+            init(); 
+            
+            // 2. Generate the first terrain (this is the heavy synchronous part)
+            // This ensures the world is "good" before we proceed.
+            generateTerrain(true);
+            
+            // 3. Calculate remaining time for minimum loading duration
+            const elapsedTime = performance.now() - startTime;
+            const remainingTime = Math.max(0, MINIMUM_LOADING_TIME - elapsedTime);
 
-        window.onload = function () {
-            // Use a small timeout (e.g., 100ms) to ensure the loading screen CSS/HTML has been 
-            // rendered and displayed by the browser BEFORE the heavy synchronous JS runs.
-            setTimeout(startApplication, 100); 
-        };
+            // 4. Wait for the remaining time, then hide the loading screen and start rendering
+            console.log(`Terrain generated in ${elapsedTime.toFixed(2)}ms. Waiting an additional ${remainingTime.toFixed(2)}ms.`);
+            
+            setTimeout(() => {
+                hideLoadingScreen();
+                // 5. Start the render loop
+                animate();
+            }, remainingTime);
+        }
 
-    </script>
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.onload = function () {
+            // Use a small timeout to ensure the loading screen CSS/HTML is rendered before
+            // the heavy synchronous JS runs (Perlin Noise/Geometry generation)
+            setTimeout(startApplication, 100); 
+        };
+
+    </script>
 </body>
 </html>
