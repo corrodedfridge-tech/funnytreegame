@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Terrain Viewer</title>
+    <title>Funny Tree Game</title>
     <!-- Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
     <!-- Inter Font and Custom Styles --><style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
@@ -488,6 +488,9 @@
             const loadingScreen = document.getElementById('loading-screen');
             if (loadingScreen) {
                 loadingScreen.style.opacity = '0';
+                // FIX: Immediately disable pointer events so controls and buttons are clickable
+                loadingScreen.style.pointerEvents = 'none'; 
+                
                 // Remove the element from the flow after the fade-out transition
                 setTimeout(() => loadingScreen.classList.add('hidden'), 500); 
             }
