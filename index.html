@@ -38,8 +38,8 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* Ensure canvas is a block element */
-        canvas { display: block; }
+        /* Ensure canvas is a block element and fill the screen */
+        canvas { display: block; touch-action: none; } /* touch-action: none is critical for mobile drag controls */
 
         /* Style the range inputs */
         input[type="range"]::-webkit-slider-thumb {
@@ -91,8 +91,7 @@
     <!-- Loading Screen (Displayed first) -->
     <div id="loading-screen">
         <!-- Logo size increased and made responsive -->
-        <!-- NOTE: The image reference must remain here as it was provided by the user -->
-        <img src="funnytreeegame.png" alt="Funny Tree Game Logo" class="w-64 sm:w-80 md:w-96 mb-8 animate-pulse">
+        <img src="funnytreegame.png" alt="Funny Tree Game Logo" class="w-64 sm:w-80 md:w-96 mb-8 animate-pulse" onerror="this.onerror=null; this.src='https://placehold.co/300x150/0A0A0A/ffffff?text=Funny+Tree+Game';">
         <div class="spinner"></div>
         <p class="mt-4 text-gray-400">Generating world, please wait... (it may be shayt btw)</p>
     </div>
@@ -106,7 +105,7 @@
     <!-- Controls Panel (Modal Pop-up) --><div id="controls-modal" class="modal-overlay hidden">
         <div class="modal-panel">
             <h2 class="text-2xl font-bold mb-4 text-emerald-400">Terrain Parameters</h2>
-            <p class="text-sm text-gray-400 mb-4">Adjust the sliders and click 'Generate' to create a new world. Use your mouse to navigate.</p>
+            <p class="text-sm text-gray-400 mb-4">Adjust the sliders and click 'Generate' to create a new world. Use finger sliding (or click-and-drag) to rotate and mouse wheel to zoom.</p>
 
             <!-- Parameter 1: Height Scale --><div class="mb-3">
                 <label for="heightScale" class="block text-sm font-medium mb-1 text-gray-300">Mountain Height: <span id="heightScaleValue" class="font-bold text-emerald-300">100</span></label>
@@ -164,8 +163,15 @@
         let sky, sun; 
         const sceneContainer = document.getElementById('scene-container');
         let sunLight; 
-        // Minimum time in milliseconds the loading screen must be visible after generation finishes.
-        const MINIMUM_LOADING_TIME = 3000; // 3 seconds minimum wait time
+        const MINIMUM_LOADING_TIME = 3000;
+
+        // --- Touch/Mouse Control Variables ---
+        let isDragging = false;
+        let previousTouchX = 0;
+        let previousTouchY = 0;
+        // Adjust this value for touch sensitivity
+        const rotationSpeed = 0.005; 
+        const zoomSpeed = 0.05; // Speed for mouse wheel zoom
 
         // --- Perlin Noise Implementation (Simplified) ---
         function PseudoRandom(seed) {
@@ -223,7 +229,7 @@
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
             renderer.toneMappingExposure = 0.5;
 
-            // Controls
+            // Controls: Initialize OrbitControls
             controls = new THREE.OrbitControls(camera, renderer.domElement); 
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
@@ -231,6 +237,10 @@
             controls.minDistance = 50;
             controls.maxDistance = 1000;
             controls.maxPolarAngle = Math.PI / 2 - 0.1; 
+            
+            // CRITICAL CHANGE: Disable OrbitControls' default mouse/keyboard/touch handling.
+            // We only keep it for damping and camera constraints logic.
+            controls.enabled = false; 
 
             // Initialize groups
             treeGroup = new THREE.Group();
@@ -245,8 +255,149 @@
             document.getElementById('openParamsBtn').addEventListener('click', () => document.getElementById('controls-modal').classList.remove('hidden'));
             document.getElementById('closeParamsBtn').addEventListener('click', () => document.getElementById('controls-modal').classList.add('hidden'));
             setupControlListeners();
+            
+            // Setup custom controls for rotation and zoom
+            setupCustomControls();
         }
 
+        // --- Custom Control Setup (Includes Zoom) ---
+        function setupCustomControls() {
+            const element = renderer.domElement;
+
+            // Touch/Drag handlers for Rotation (Yaw/Pitch)
+            element.addEventListener('touchstart', onTouchStart, { passive: false });
+            element.addEventListener('touchmove', onTouchMove, { passive: false });
+            element.addEventListener('touchend', onTouchEnd, { passive: false });
+            element.addEventListener('touchcancel', onTouchEnd, { passive: false });
+            
+            // Mouse handlers for Rotation (Click & Drag)
+            element.addEventListener('mousedown', onTouchStart, { passive: false });
+            element.addEventListener('mousemove', onTouchMove, { passive: false });
+            element.addEventListener('mouseup', onTouchEnd, { passive: false });
+            
+            // Mouse Wheel handler for Zoom (NEW)
+            element.addEventListener('wheel', onMouseWheel, { passive: false });
+        }
+
+        // --- Mouse Wheel Zoom Functionality ---
+        function onMouseWheel(event) {
+            event.preventDefault();
+
+            // Determine zoom direction and factor
+            let delta = event.deltaY;
+            
+            // FIX: Use THREE.Vector3.distanceTo() since controls.getDistance() is not available in this three.js version
+            const currentDistance = camera.position.distanceTo(controls.target);
+
+            let newDistance;
+            
+            // Positive delta means scrolling down (zoom out), negative means scrolling up (zoom in)
+            if (delta > 0) {
+                // Zoom out: increase distance
+                newDistance = currentDistance * (1 + zoomSpeed);
+            } else if (delta < 0) {
+                // Zoom in: decrease distance
+                newDistance = currentDistance * (1 - zoomSpeed);
+            } else {
+                return;
+            }
+
+            // Clamp the new distance using controls limits
+            newDistance = Math.max(controls.minDistance, Math.min(controls.maxDistance, newDistance));
+
+            // Get the direction vector from target to camera
+            const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+            
+            // Set the new length (distance) for the offset vector
+            offset.setLength(newDistance);
+            
+            // Calculate the new camera position
+            camera.position.copy(controls.target).add(offset);
+            
+            // Since we manually manipulated the camera, we must call update.
+            controls.update();
+        }
+
+
+        function getClientCoords(event) {
+            // Check if it's a touch event or mouse event
+            if (event.touches && event.touches.length > 0) {
+                return { x: event.touches[0].clientX, y: event.touches[0].clientY };
+            } else if (event.clientX !== undefined) {
+                return { x: event.clientX, y: event.clientY };
+            }
+            return null;
+        }
+
+        function onTouchStart(event) {
+            const coords = getClientCoords(event);
+            
+            // Only handle single touch/click (multi-touch is reserved for native zoom on mobile)
+            if ((event.touches && event.touches.length === 1) || (event.type === 'mousedown')) {
+                event.preventDefault(); // Prevent scrolling/default browser action
+                isDragging = true;
+                previousTouchX = coords.x;
+                previousTouchY = coords.y;
+            } else {
+                isDragging = false; 
+            }
+        }
+
+        function onTouchMove(event) {
+            if (isDragging) {
+                event.preventDefault();
+                const coords = getClientCoords(event);
+                
+                if (coords) {
+                    const currentTouchX = coords.x;
+                    const currentTouchY = coords.y;
+
+                    const deltaX = currentTouchX - previousTouchX;
+                    const deltaY = currentTouchY - previousTouchY;
+
+                    // Apply rotation based on finger slide delta
+                    handleCameraRotation(deltaX, deltaY);
+
+                    // Update previous position
+                    previousTouchX = currentTouchX;
+                    previousTouchY = currentTouchY;
+                }
+            }
+        }
+
+        function onTouchEnd(event) {
+            isDragging = false;
+        }
+
+        // Function to convert touch delta into camera rotation (Yaw/Pitch)
+        function handleCameraRotation(deltaX, deltaY) {
+            if (!controls) return;
+            
+            // 1. Get camera's spherical position relative to the target (controls.target)
+            const targetToCamera = camera.position.clone().sub(controls.target);
+            const spherical = new THREE.Spherical().setFromVector3(targetToCamera);
+
+            // 2. Calculate new spherical coordinates
+            // Horizontal drag (deltaX) controls Azimuthal angle (theta)
+            spherical.theta -= deltaX * rotationSpeed;
+            
+            // Vertical drag (deltaY) controls Polar angle (phi)
+            // Clamp the pitch to prevent the camera from going below the ground or flipping over
+            spherical.phi -= deltaY * rotationSpeed;
+            // Use controls' maxPolarAngle for consistent bounds
+            spherical.phi = Math.max(controls.minPolarAngle, Math.min(controls.maxPolarAngle, spherical.phi));
+
+            // 3. Convert back to Cartesian and set camera position
+            targetToCamera.setFromSpherical(spherical);
+            camera.position.copy(controls.target).add(targetToCamera);
+            
+            // 4. Ensure the camera still looks at the target
+            camera.lookAt(controls.target);
+
+            // 5. Force controls to update its internal state to recognize the change
+            controls.update();
+        }
+        
         // --- Sky Initialization ---
         function initSky() {
             sky = new THREE.Sky(); 
@@ -508,20 +659,16 @@
         }
         
         function startApplication() {
-            // Record the time when the generation process starts
             const startTime = performance.now();
 
-            // 1. Initialize three.js components (camera, renderer, controls, sky)
+            // 1. Initialize three.js components
             init(); 
             
-            // 2. Generate the first terrain (this is the heavy synchronous part)
+            // 2. Generate the first terrain
             generateTerrain(true);
             
-            // ************ THE CRITICAL FIX IS HERE ************
-            // 3. Start the render loop IMMEDIATELY after generation.
-            // This ensures the 3D scene is animated and interactive while the loading screen is still visible.
+            // 3. Start the render loop 
             animate(); 
-            // **************************************************
 
             // 4. Calculate remaining time for minimum loading duration
             const elapsedTime = performance.now() - startTime;
@@ -538,13 +685,14 @@
         // --- Animation Loop ---
         function animate() {
             requestAnimationFrame(animate);
-            controls.update();
+            // controls.update() is crucial here for damping and constraints, 
+            // even though we disabled its input handlers.
+            controls.update(); 
             renderer.render(scene, camera);
         }
 
         window.onload = function () {
             // Use a small timeout to ensure the loading screen CSS/HTML is rendered before
-            // the heavy synchronous JS runs (Perlin Noise/Geometry generation)
             setTimeout(startApplication, 100); 
         };
 
