@@ -2,701 +2,1031 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Funny Tree Game</title>
-    <!-- Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
-    <!-- Inter Font and Custom Styles --><style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Funny Tree Game - Ultimate</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-        body { font-family: 'Inter', sans-serif; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; overflow: hidden; user-select: none; -webkit-user-select: none; background: #000; }
         
-        /* Loading Screen specific styles */
+        /* Loading Screen */
         #loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #0A0A0A; /* Very dark background */
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            opacity: 1;
-            transition: opacity 0.5s ease-out; /* Smooth fade out */
+            position: fixed; inset: 0; background-color: #050505; z-index: 100;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.5s ease-out;
         }
         .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid #10B981; /* Emerald */
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
+            border: 4px solid rgba(255, 255, 255, 0.1); border-top: 4px solid #10B981;
+            border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
         
-        /* Ensure canvas is a block element and fill the screen */
-        canvas { display: block; touch-action: none; } /* touch-action: none is critical for mobile drag controls */
+        /* Error Message */
+        #error-display {
+            position: fixed; bottom: 20px; left: 20px; right: 20px; z-index: 200;
+            background: rgba(220, 38, 38, 0.9); color: white; padding: 10px; border-radius: 8px;
+            font-size: 12px; font-family: monospace; display: none;
+        }
 
-        /* Style the range inputs */
+        canvas { display: block; touch-action: none; outline: none; }
+
+        /* Custom Sliders */
         input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 16px;
-            height: 16px;
-            background: #10B981; /* Emerald 500 */
-            cursor: pointer;
-            border-radius: 50%;
-            transition: background 0.2s;
+            -webkit-appearance: none; appearance: none; width: 20px; height: 20px;
+            background: #10B981; cursor: pointer; border-radius: 50%; margin-top: -8px;
+            border: 2px solid #064E3B;
         }
-        input[type="range"]::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            background: #10B981;
-            cursor: pointer;
-            border-radius: 50%;
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 4px; background: #4B5563; border-radius: 2px;
         }
 
-        /* Modal specific styles */
+        /* Panels */
         .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 50; /* Above three.js scene */
+            position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6);
+            display: flex; justify-content: center; align-items: center; z-index: 50;
         }
         .modal-panel {
-            background-color: #1F2937; /* Gray 800 */
-            border: 1px solid rgba(55, 65, 81, 0.5); /* Gray 700 with transparency */
-            border-radius: 0.5rem;
-            padding: 1.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(8px);
-            max-width: 90%;
-            width: 28rem;
-            position: relative;
+            background-color: #111827; border: 1px solid #374151;
+            border-radius: 16px; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            width: 340px; max-width: 95%; max-height: 85vh; overflow-y: auto;
+        }
+        
+        /* HUD Buttons */
+        .hud-btn {
+            background: rgba(17, 24, 39, 0.9); border: 1px solid rgba(75, 85, 99, 0.8);
+            backdrop-filter: blur(4px); color: white; border-radius: 12px;
+            transition: all 0.1s; touch-action: manipulation;
+        }
+        .hud-btn:active { transform: scale(0.95); background: #059669; }
+        .hud-btn.active { background: #10B981; border-color: #059669; box-shadow: 0 0 10px #10B981; }
+
+        /* Disaster Buttons */
+        .disaster-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 16px; border-radius: 12px; background: #1F2937; border: 2px solid #374151;
+            transition: all 0.2s; font-weight: bold; font-size: 0.8rem;
+        }
+        .disaster-btn:active { transform: scale(0.95); }
+        .disaster-btn.nuke { border-color: #EF4444; color: #FCA5A5; }
+        .disaster-btn.nuke:active { background: #7F1D1D; }
+        .disaster-btn.meteor { border-color: #F59E0B; color: #FCD34D; }
+        .disaster-btn.meteor:active { background: #78350F; }
+        .disaster-btn.flood { border-color: #3B82F6; color: #93C5FD; }
+        .disaster-btn.flood:active { background: #1E3A8A; }
+        .disaster-btn.wildfire { border-color: #EA580C; color: #FDBA74; }
+        .disaster-btn.wildfire:active { background: #7C2D12; }
+
+        /* Tool Colors */
+        .edit-tool.active[data-tool="raise"] { background: #10B981; border-color: #059669; }
+        .edit-tool.active[data-tool="lower"] { background: #EF4444; border-color: #B91C1C; }
+        .edit-tool.active[data-tool="tree"] { background: #F59E0B; border-color: #B45309; }
+
+        /* FX Overlays */
+        #fx-overlay {
+            position: fixed; inset: 0; pointer-events: none; z-index: 40; opacity: 0; transition: opacity 0.5s;
+            mix-blend-mode: hard-light;
+        }
+        #countdown-overlay {
+            position: fixed; inset: 0; display: flex; justify-content: center; align-items: center;
+            z-index: 45; pointer-events: none; font-weight: 900; font-size: 20vw; color: #EF4444;
+            text-shadow: 0 0 30px rgba(0,0,0,1); opacity: 0; letter-spacing: -5px;
+        }
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both infinite; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, -2px, 0); }
+            20%, 80% { transform: translate3d(4px, 4px, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, -6px, 0); }
+            40%, 60% { transform: translate3d(6px, 6px, 0); }
         }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
 
-    <!-- Loading Screen (Displayed first) -->
+    <div id="error-display"></div>
+
+    <!-- Loading Screen -->
     <div id="loading-screen">
-        <!-- Logo size increased and made responsive -->
-        <img src="funnytreegame.png" alt="Funny Tree Game Logo" class="w-64 sm:w-80 md:w-96 mb-8 animate-pulse" onerror="this.onerror=null; this.src='https://placehold.co/300x150/0A0A0A/0A0A0A?text=';">
+        <img src="funnytreeegame.png" alt="" class="w-64 sm:w-80 md:w-96 mb-8 animate-pulse" onerror="this.onerror=null; this.src='https://placehold.co/300x150/0A0A0A/0A0A0A?text=';">
         <div class="spinner"></div>
-        <p class="mt-4 text-gray-400">Generating world, please wait... (it may be shayt btw)</p>
     </div>
 
-    <!-- Container for 3D Scene --><div id="scene-container" class="absolute inset-0 z-0"></div>
+    <!-- Cinematic Layers -->
+    <div id="fx-overlay"></div>
+    <div id="countdown-overlay"></div>
 
-    <!-- Open Parameters Button (Top Right) --><button id="openParamsBtn" class="absolute top-4 right-4 z-20 py-2 px-4 bg-blue-600 hover:bg-blue-500 rounded-md font-semibold transition-colors duration-200 shadow-lg shadow-blue-900/50">
-        Open Parameters
-    </button>
+    <!-- 3D Viewport -->
+    <div id="scene-container" class="absolute inset-0 z-0"></div>
 
-    <!-- Controls Panel (Modal Pop-up) --><div id="controls-modal" class="modal-overlay hidden">
-        <div class="modal-panel">
-            <h2 class="text-2xl font-bold mb-4 text-emerald-400">Terrain Parameters</h2>
-            <p class="text-sm text-gray-400 mb-4">Adjust the sliders and click 'Generate' to create a new world. Use finger sliding (or click-and-drag) to rotate and mouse wheel to zoom.</p>
+    <!-- Gameplay UI -->
+    <div id="main-ui">
+        <!-- Top Bar -->
+        <div class="absolute top-4 right-4 z-20 flex gap-3">
+            <button id="disastersBtn" class="hud-btn p-3 px-4 text-xs font-bold tracking-widest shadow-xl bg-red-900/80 border-red-500/50">
+                DISASTERS
+            </button>
+            <button id="openParamsBtn" class="hud-btn p-3 px-4 text-xs font-bold tracking-widest shadow-xl">
+                SETTINGS
+            </button>
+        </div>
 
-            <!-- Parameter 1: Height Scale --><div class="mb-3">
-                <label for="heightScale" class="block text-sm font-medium mb-1 text-gray-300">Mountain Height: <span id="heightScaleValue" class="font-bold text-emerald-300">100</span></label>
-                <input type="range" id="heightScale" min="10" max="250" value="100" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+        <!-- Right Side Tools -->
+        <div class="absolute top-24 right-4 z-20 flex flex-col gap-4">
+            <button id="followBirdBtn" class="hud-btn p-4 shadow-lg" title="Toggle Bird Cam">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+            </button>
+            <button id="editModeBtn" class="hud-btn p-4 shadow-lg" title="Edit Terrain">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Edit Toolbar -->
+        <div id="editToolbar" class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 bg-gray-900 px-6 py-4 flex gap-6 border border-gray-700 rounded-full shadow-2xl hidden w-max">
+            <div class="flex items-center gap-3">
+                <button class="hud-btn p-3 text-xs edit-tool active" data-tool="raise">Raise</button>
+                <button class="hud-btn p-3 text-xs edit-tool" data-tool="lower">Lower</button>
+                <button class="hud-btn p-3 text-xs edit-tool" data-tool="tree">Tree</button>
             </div>
-
-            <!-- Parameter 2: Noise Frequency --><div class="mb-3">
-                <label for="frequency" class="block text-sm font-medium mb-1 text-gray-300">Roughness/Detail: <span id="frequencyValue" class="font-bold text-emerald-300">0.003</span></label>
-                <input type="range" id="frequency" min="0.001" max="0.1" step="0.001" value="0.003" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            <div class="w-px bg-gray-700"></div>
+            <div class="flex items-center">
+                <input type="range" id="brushSize" min="10" max="80" value="30" class="w-24">
             </div>
+        </div>
 
-            <!-- Parameter 3: Tree Density --><div class="mb-3">
-                <label for="treeDensity" class="block text-sm font-medium mb-1 text-gray-300">Tree Density (Thousands): <span id="treeDensityValue" class="font-bold text-emerald-300">2</span></label>
-                <input type="range" id="treeDensity" min="0" max="10" value="2" step="0.5" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
-            </div>
+        <!-- Settings Modal -->
+        <div id="controls-modal" class="modal-overlay hidden">
+            <div class="modal-panel">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-white">Settings</h2>
+                    <button id="closeParamsBtn" class="text-3xl text-gray-400 hover:text-white">&times;</button>
+                </div>
+                
+                <div class="space-y-6 text-sm font-semibold text-gray-200">
+                    <div>
+                        <label class="flex justify-between mb-2">Height Scale <span id="heightScaleValue" class="text-emerald-400">120</span></label>
+                        <input type="range" id="heightScale" min="50" max="400" value="120" class="w-full">
+                    </div>
+                    <div>
+                        <label class="flex justify-between mb-2">Smoothness <span id="frequencyValue" class="text-emerald-400">0.003</span></label>
+                        <input type="range" id="frequency" min="0.001" max="0.01" step="0.001" value="0.003" class="w-full">
+                    </div>
+                    <div>
+                        <label class="flex justify-between mb-2">Tree Density <span id="treeDensityValue" class="text-emerald-400">2</span></label>
+                        <input type="range" id="treeDensity" min="0" max="10" value="2" step="0.5" class="w-full">
+                    </div>
+                    
+                    <hr class="border-gray-700">
+                    
+                    <div>
+                        <label class="flex justify-between mb-2 text-blue-300">Bird Count <span id="birdCountValue">50</span></label>
+                        <input type="range" id="birdCount" min="0" max="300" value="50" step="10" class="w-full">
+                    </div>
+                    
+                    <hr class="border-gray-700">
 
-            <!-- Parameter 4: Terrain Size --><div class="mb-4">
-                <label for="terrainSize" class="block text-sm font-medium mb-1 text-gray-300">Terrain Resolution (Vertices 200x200): <span id="terrainSizeValue" class="font-bold text-emerald-300">200</span></label>
-                <input type="range" id="terrainSize" min="50" max="200" value="200" step="10" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
-            </div>
+                    <div>
+                        <label class="block text-yellow-400 mb-2 flex justify-between">Sun Height <span id="inclinationValue">0.49</span></label>
+                        <input type="range" id="inclination" min="0" max="0.5" step="0.01" value="0.49" class="w-full">
+                    </div>
+                </div>
 
-            <hr class="border-gray-700 my-4">
-
-            <!-- Sky Parameters --><h3 class="text-lg font-bold mb-3 text-blue-400">Sky & Sun Settings</h3>
-            
-            <div class="mb-3">
-                <label for="inclination" class="block text-sm font-medium mb-1 text-gray-300">Sun Height (Day/Night): <span id="inclinationValue" class="font-bold text-blue-300">0.49</span></label>
-                <input type="range" id="inclination" min="0" max="0.5" step="0.01" value="0.49" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
-            </div>
-
-            <div class="mb-4">
-                <label for="azimuth" class="block text-sm font-medium mb-1 text-gray-300">Sun Direction: <span id="azimuthValue" class="font-bold text-blue-300">0.25</span></label>
-                <input type="range" id="azimuth" min="0" max="1" step="0.01" value="0.25" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
-            </div>
-
-            <!-- Generate and Close Buttons --><div class="flex justify-between gap-4 mt-6">
-                <button id="generateBtn" class="flex-1 py-2 px-4 bg-emerald-600 hover:bg-emerald-500 rounded-md font-semibold transition-colors duration-200 shadow-md shadow-emerald-900/50">
-                    Generate New Terrain
+                <button id="generateBtn" class="w-full mt-8 py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-transform">
+                    REGENERATE WORLD
                 </button>
-                <button id="closeParamsBtn" class="flex-1 py-2 px-4 bg-gray-600 hover:bg-gray-500 rounded-md font-semibold transition-colors duration-200 shadow-md shadow-gray-900/50">
-                    Close
-                </button>
+            </div>
+        </div>
+
+        <!-- Disasters Modal -->
+        <div id="disasters-modal" class="modal-overlay hidden">
+            <div class="modal-panel">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-red-400">Disasters</h2>
+                    <button id="closeDisastersBtn" class="text-3xl text-gray-400 hover:text-white">&times;</button>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <button class="disaster-btn nuke" onclick="triggerDisaster('nuke')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        TACTICAL NUKE
+                    </button>
+                    <button class="disaster-btn meteor" onclick="triggerDisaster('meteor')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                        </svg>
+                        METEOR SHOWER
+                    </button>
+                    <button class="disaster-btn flood" onclick="triggerDisaster('flood')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        FLASH FLOOD
+                    </button>
+                    <button class="disaster-btn wildfire" onclick="triggerDisaster('wildfire')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+                        </svg>
+                        WILDFIRE
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- 1. Load THREE.js Core Globally --><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- 2. Load Examples Globally (using /js/ path, which attaches them to THREE) --><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Sky.js"></script>
 
-    <!-- MAIN JAVASCRIPT LOGIC (using global references) --><script>
-        // --- Global three.js Variables ---
-        let scene, camera, renderer, controls;
-        let terrainMesh, treeGroup;
-        let sky, sun; 
-        const sceneContainer = document.getElementById('scene-container');
-        let sunLight; 
-        const MINIMUM_LOADING_TIME = 3000;
+    <!-- Game Logic -->
+    <script>
+        // --- SAFE AUDIO SYSTEM ---
+        let audioCtx;
+        const SoundSystem = {
+            init: () => {
+                if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+                if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+            },
+            playTone: (freq, type, duration, vol=0.1) => {
+                if(!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            },
+            playExplosion: () => {
+                if(!audioCtx) return;
+                const bufferSize = audioCtx.sampleRate * 2;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 1000;
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 2);
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+                noise.start();
+            },
+            playSiren: () => {
+                if(!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 1.5);
+                osc.frequency.linearRampToValueAtTime(400, audioCtx.currentTime + 3);
+                gain.gain.value = 0.3;
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 3);
+            },
+            // The playBird function has been removed as requested.
+        };
 
-        // --- Touch/Mouse Control Variables ---
-        let isDragging = false;
-        let previousTouchX = 0;
-        let previousTouchY = 0;
-        // Adjust this value for touch sensitivity
-        const rotationSpeed = 0.005; 
-        const zoomSpeed = 0.05; // Speed for mouse wheel zoom
+        // --- CONSTANTS ---
+        const TERRAIN_SIZE = 1500;
+        const TERRAIN_SEGMENTS = 180; 
+        
+        let scene, camera, renderer, controls, sunLight;
+        let terrainMesh, waterMesh;
+        let treeGroup, birdGroup, cloudGroup, explosionGroup;
+        let sky, sun;
+        
+        // State
+        let isEditMode = false;
+        let editTool = 'raise'; 
+        let brushSize = 30;
+        let brushMesh; 
+        
+        let followedBird = null;
+        let isFlying = false;
+        const keyState = { w:false, a:false, s:false, d:false, space:false, shift:false };
+        const velocity = new THREE.Vector3();
+        
+        let birdObjects = [];
+        let birdsDead = false;
+        
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let terrainOffset = { x: 0, z: 0 }; 
 
-        // --- Perlin Noise Implementation (Simplified) ---
+        // --- SAFE GETTER HELPER ---
+        // This prevents the "Cannot read property of null" error
+        function getVal(id, def) {
+            const el = document.getElementById(id);
+            return el ? parseFloat(el.value) : def;
+        }
+
+        // --- ERROR HANDLING ---
+        window.onerror = function(msg, url, line, col, error) {
+            const el = document.getElementById('error-display');
+            el.style.display = 'block';
+            el.innerHTML += `Error: ${msg}<br>`;
+            const l = document.getElementById('loading-screen');
+            if(l) l.style.display = 'none';
+            return false;
+        };
+
+        // --- MATH ---
         function PseudoRandom(seed) {
             this.seed = seed;
-            this.random = function() {
-                this.seed = (this.seed * 9301 + 49297) % 233280;
-                return this.seed / 233280.0;
-            };
-            this.setSeed = function(newSeed) {
-                this.seed = newSeed;
-            };
+            this.random = () => { this.seed = (this.seed * 9301 + 49297) % 233280; return this.seed / 233280.0; };
         }
+        let prng = new PseudoRandom(Math.random());
 
-        const prng = new PseudoRandom(Math.random() * 10000);
-
-        function getNoiseValue(x, y, frequency, octaves, seed) {
-            prng.setSeed(seed);
-            let total = 0;
-            let maxAmp = 0;
-            let amp = 1;
-            let freq = frequency;
-
-            for (let i = 0; i < octaves; i++) {
-                let noiseX = Math.floor(x * freq + prng.random() * 100);
-                let noiseY = Math.floor(y * freq + prng.random() * 100);
-                
-                let baseVal = new PseudoRandom(noiseX * 1000 + noiseY + seed).random();
-                
-                total += baseVal * amp;
+        function getNoise(x, z, freq, octaves) {
+            let total = 0, amp = 1, maxAmp = 0;
+            for(let i=0; i<octaves; i++) {
+                const nx = x * freq;
+                const nz = z * freq;
+                const val = Math.sin(nx) * Math.cos(nz) + Math.sin(nx*1.5 + nz*0.5)*0.5 + Math.cos(nx*0.5 - nz*1.5)*0.5;
+                total += val * amp;
                 maxAmp += amp;
-                amp *= 0.5; 
-                freq *= 2.0; 
+                amp *= 0.5; freq *= 2;
             }
-
-            return total / maxAmp; 
+            return (total/maxAmp + 1) * 0.5; 
         }
 
-        // --- Initialization ---
+        // --- INIT ---
         function init() {
-            // Scene setup
-            scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x87CEEB, 0.001);
+            try {
+                scene = new THREE.Scene();
+                scene.fog = new THREE.FogExp2(0x87CEEB, 0.0006);
 
-            // Camera setup
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 3000);
-            camera.position.set(0, 150, 250);
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 1, 6000);
+                camera.position.set(0, 400, 700);
 
-            // Renderer setup
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            sceneContainer.appendChild(renderer.domElement);
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 0.5;
+                renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                document.getElementById('scene-container').appendChild(renderer.domElement);
 
-            // Controls: Initialize OrbitControls
-            controls = new THREE.OrbitControls(camera, renderer.domElement); 
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.screenSpacePanning = false;
-            controls.minDistance = 50;
-            controls.maxDistance = 1000;
-            controls.maxPolarAngle = Math.PI / 2 - 0.1; 
-            
-            // CRITICAL CHANGE: Disable OrbitControls' default mouse/keyboard/touch handling.
-            // We only keep it for damping and camera constraints logic.
-            controls.enabled = false; 
-
-            // Initialize groups
-            treeGroup = new THREE.Group();
-            scene.add(treeGroup);
-
-            // Initialize Sky
-            initSky();
-
-            // Event listeners
-            window.addEventListener('resize', onWindowResize, false);
-            document.getElementById('generateBtn').addEventListener('click', () => document.getElementById('controls-modal').classList.add('hidden') || generateTerrain(true));
-            document.getElementById('openParamsBtn').addEventListener('click', () => document.getElementById('controls-modal').classList.remove('hidden'));
-            document.getElementById('closeParamsBtn').addEventListener('click', () => document.getElementById('controls-modal').classList.add('hidden'));
-            setupControlListeners();
-            
-            // Setup custom controls for rotation and zoom
-            setupCustomControls();
-        }
-
-        // --- Custom Control Setup (Includes Zoom) ---
-        function setupCustomControls() {
-            const element = renderer.domElement;
-
-            // Touch/Drag handlers for Rotation (Yaw/Pitch)
-            element.addEventListener('touchstart', onTouchStart, { passive: false });
-            element.addEventListener('touchmove', onTouchMove, { passive: false });
-            element.addEventListener('touchend', onTouchEnd, { passive: false });
-            element.addEventListener('touchcancel', onTouchEnd, { passive: false });
-            
-            // Mouse handlers for Rotation (Click & Drag)
-            element.addEventListener('mousedown', onTouchStart, { passive: false });
-            element.addEventListener('mousemove', onTouchMove, { passive: false });
-            element.addEventListener('mouseup', onTouchEnd, { passive: false });
-            
-            // Mouse Wheel handler for Zoom (NEW)
-            element.addEventListener('wheel', onMouseWheel, { passive: false });
-        }
-
-        // --- Mouse Wheel Zoom Functionality ---
-        function onMouseWheel(event) {
-            event.preventDefault();
-
-            // Determine zoom direction and factor
-            let delta = event.deltaY;
-            
-            // FIX: Use THREE.Vector3.distanceTo() since controls.getDistance() is not available in this three.js version
-            const currentDistance = camera.position.distanceTo(controls.target);
-
-            let newDistance;
-            
-            // Positive delta means scrolling down (zoom out), negative means scrolling up (zoom in)
-            if (delta > 0) {
-                // Zoom out: increase distance
-                newDistance = currentDistance * (1 + zoomSpeed);
-            } else if (delta < 0) {
-                // Zoom in: decrease distance
-                newDistance = currentDistance * (1 - zoomSpeed);
-            } else {
-                return;
-            }
-
-            // Clamp the new distance using controls limits
-            newDistance = Math.max(controls.minDistance, Math.min(controls.maxDistance, newDistance));
-
-            // Get the direction vector from target to camera
-            const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
-            
-            // Set the new length (distance) for the offset vector
-            offset.setLength(newDistance);
-            
-            // Calculate the new camera position
-            camera.position.copy(controls.target).add(offset);
-            
-            // Since we manually manipulated the camera, we must call update.
-            controls.update();
-        }
-
-
-        function getClientCoords(event) {
-            // Check if it's a touch event or mouse event
-            if (event.touches && event.touches.length > 0) {
-                return { x: event.touches[0].clientX, y: event.touches[0].clientY };
-            } else if (event.clientX !== undefined) {
-                return { x: event.clientX, y: event.clientY };
-            }
-            return null;
-        }
-
-        function onTouchStart(event) {
-            const coords = getClientCoords(event);
-            
-            // Only handle single touch/click (multi-touch is reserved for native zoom on mobile)
-            if ((event.touches && event.touches.length === 1) || (event.type === 'mousedown')) {
-                event.preventDefault(); // Prevent scrolling/default browser action
-                isDragging = true;
-                previousTouchX = coords.x;
-                previousTouchY = coords.y;
-            } else {
-                isDragging = false; 
-            }
-        }
-
-        function onTouchMove(event) {
-            if (isDragging) {
-                event.preventDefault();
-                const coords = getClientCoords(event);
-                
-                if (coords) {
-                    const currentTouchX = coords.x;
-                    const currentTouchY = coords.y;
-
-                    const deltaX = currentTouchX - previousTouchX;
-                    const deltaY = currentTouchY - previousTouchY;
-
-                    // Apply rotation based on finger slide delta
-                    handleCameraRotation(deltaX, deltaY);
-
-                    // Update previous position
-                    previousTouchX = currentTouchX;
-                    previousTouchY = currentTouchY;
+                if(typeof THREE.OrbitControls !== 'undefined') {
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+                    controls.dampingFactor = 0.05;
+                    controls.maxPolarAngle = Math.PI / 2 - 0.05;
+                    controls.minDistance = 20;
+                    controls.maxDistance = 2500;
                 }
+                
+                const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+                scene.add(ambient);
+                
+                sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+                sunLight.position.set(500, 1000, 500);
+                sunLight.castShadow = true;
+                sunLight.shadow.mapSize.width = 2048;
+                sunLight.shadow.mapSize.height = 2048;
+                sunLight.shadow.camera.near = 0.5;
+                sunLight.shadow.camera.far = 4000;
+                const d = 1200;
+                sunLight.shadow.camera.left = -d; sunLight.shadow.camera.right = d;
+                sunLight.shadow.camera.top = d; sunLight.shadow.camera.bottom = -d;
+                scene.add(sunLight);
+
+                treeGroup = new THREE.Group(); scene.add(treeGroup);
+                birdGroup = new THREE.Group(); scene.add(birdGroup);
+                cloudGroup = new THREE.Group(); scene.add(cloudGroup);
+                explosionGroup = new THREE.Group(); scene.add(explosionGroup);
+
+                initSky();
+                initBrush();
+                setupUI();
+                setupInput();
+                window.addEventListener('resize', onResize);
+                
+                document.body.addEventListener('click', () => { SoundSystem.init(); }, {once:true});
+                document.body.addEventListener('touchstart', () => { SoundSystem.init(); }, {once:true});
+
+            } catch (e) {
+                console.error("Init Error:", e);
+                document.getElementById('error-display').style.display = 'block';
+                document.getElementById('error-display').innerText = "Init Failed: " + e.message;
             }
         }
 
-        function onTouchEnd(event) {
-            isDragging = false;
-        }
-
-        // Function to convert touch delta into camera rotation (Yaw/Pitch)
-        function handleCameraRotation(deltaX, deltaY) {
-            if (!controls) return;
-            
-            // 1. Get camera's spherical position relative to the target (controls.target)
-            const targetToCamera = camera.position.clone().sub(controls.target);
-            const spherical = new THREE.Spherical().setFromVector3(targetToCamera);
-
-            // 2. Calculate new spherical coordinates
-            // Horizontal drag (deltaX) controls Azimuthal angle (theta)
-            spherical.theta -= deltaX * rotationSpeed;
-            
-            // Vertical drag (deltaY) controls Polar angle (phi)
-            // Clamp the pitch to prevent the camera from going below the ground or flipping over
-            spherical.phi -= deltaY * rotationSpeed;
-            // Use controls' maxPolarAngle for consistent bounds
-            spherical.phi = Math.max(controls.minPolarAngle, Math.min(controls.maxPolarAngle, spherical.phi));
-
-            // 3. Convert back to Cartesian and set camera position
-            targetToCamera.setFromSpherical(spherical);
-            camera.position.copy(controls.target).add(targetToCamera);
-            
-            // 4. Ensure the camera still looks at the target
-            camera.lookAt(controls.target);
-
-            // 5. Force controls to update its internal state to recognize the change
-            controls.update();
-        }
-        
-        // --- Sky Initialization ---
         function initSky() {
-            sky = new THREE.Sky(); 
-            sky.scale.setScalar(450000);
+            if(typeof THREE.Sky === 'undefined') return;
+            sky = new THREE.Sky();
+            sky.scale.setScalar(10000);
             scene.add(sky);
-
             sun = new THREE.Vector3();
-
-            if (sky.material && sky.material.uniforms) {
-                const skyUniforms = sky.material.uniforms;
-                if (skyUniforms['turbidity']) skyUniforms['turbidity'].value = 10;
-                if (skyUniforms['rayleigh']) skyUniforms['rayleigh'].value = 3;
-                if (skyUniforms['mieCoefficient']) skyUniforms['mieCoefficient'].value = 0.005;
-                if (skyUniforms['mieDirectionalG']) skyUniforms['mieDirectionalG'].value = 0.8;
-                if (skyUniforms['exposure']) skyUniforms['exposure'].value = 0.3; 
-            }
-            
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-            scene.add(ambientLight);
-
-            // Add Directional Light for Sun
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
-            directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-            directionalLight.shadow.camera.near = 1;
-            directionalLight.shadow.camera.far = 1500;
-            directionalLight.shadow.camera.left = -500;
-            directionalLight.shadow.camera.right = 500;
-            directionalLight.shadow.camera.top = 500;
-            directionalLight.shadow.camera.bottom = -500;
-            scene.add(directionalLight);
-            sunLight = directionalLight;
-
-            updateSun();
+            updateSunPosition();
         }
 
-        function updateSun() {
-            const inclination = parseFloat(document.getElementById('inclination').value);
-            const azimuth = parseFloat(document.getElementById('azimuth').value);
+        function updateSunPosition() {
+            if(!sky) return;
+            const incl = getVal('inclination', 0.49);
+            const azim = getVal('azimuth', 0.25);
 
-            const phi = Math.PI * (1 - inclination * 2); 
-            const theta = 2 * Math.PI * (azimuth - 0.5);
-
-            sun.setFromSphericalCoords(1, phi, theta);
+            const theta = Math.PI * (incl - 0.5);
+            const phi = 2 * Math.PI * (azim - 0.5);
             
-            if (sky && sky.material && sky.material.uniforms && sky.material.uniforms['sunPosition']) {
-                sky.material.uniforms[ 'sunPosition' ].value.copy(sun);
-            }
-
-            sunLight.position.copy(sun).multiplyScalar(500); 
-            sunLight.lookAt(0,0,0); 
+            sun.x = Math.cos(phi);
+            sun.y = Math.sin(phi) * Math.sin(theta);
+            sun.z = Math.sin(phi) * Math.cos(theta);
+            
+            sky.material.uniforms['sunPosition'].value.copy(sun);
+            sunLight.position.copy(sun).multiplyScalar(2000);
         }
 
-        // --- Core Generation Logic ---
-        function generateTerrain(randomizeSeed = false) {
-            // Get parameters from UI
-            const width = 512;
-            const depth = 512;
-            const segments = parseInt(document.getElementById('terrainSize').value);
-            const heightScale = parseFloat(document.getElementById('heightScale').value);
-            const frequency = parseFloat(document.getElementById('frequency').value); 
-            const treeDensity = parseFloat(document.getElementById('treeDensity').value) * 1000;
-            
-            const noiseSeed = randomizeSeed ? (Math.random() * 100000) : (terrainMesh ? terrainMesh.userData.seed : 0);
-            
-            // 1. Remove old terrain and trees
-            if (terrainMesh) {
-                scene.remove(terrainMesh);
-                terrainMesh.geometry.dispose();
-                terrainMesh.material.dispose();
-            }
-            if (treeGroup) {
-                treeGroup.children.forEach(c => {
-                    if (c.geometry) c.geometry.dispose();
-                    if (c.material) c.material.dispose();
-                });
-                treeGroup.clear();
-            }
+        // --- GENERATION ---
+        function generateWorld(randomize = false) {
+            try {
+                if (randomize) {
+                    terrainOffset.x = (Math.random() - 0.5) * 100000;
+                    terrainOffset.z = (Math.random() - 0.5) * 100000;
+                }
 
-            // 2. Create new plane geometry
-            const geometry = new THREE.PlaneGeometry(width, depth, segments - 1, segments - 1);
-            geometry.rotateX(-Math.PI / 2); // Orient to ground plane
-
-            const vertices = geometry.attributes.position.array;
-            const colors = [];
-            const color = new THREE.Color();
-            
-            const caveFactor = 0.5; 
-
-            // 3. Apply heightmap and color
-            for (let i = 0; i < vertices.length / 3; i++) {
-                const x = vertices[i * 3];
-                const z = vertices[i * 3 + 2];
-
-                let height = getNoiseValue(x, z, frequency, 6, noiseSeed) * heightScale; 
-                let valleyNoise = getNoiseValue(x, z, frequency / 4, 1, noiseSeed + 1) * heightScale * caveFactor;
-                height = height - valleyNoise;
-
-                vertices[i * 3 + 1] = height;
-
-                // Clamp coloringHeight at 0 to prevent terrain color change underwater
-                const coloringHeight = Math.max(height, 0); 
+                if(terrainMesh) { terrainMesh.geometry.dispose(); terrainMesh.material.dispose(); scene.remove(terrainMesh); }
+                if(waterMesh) { waterMesh.geometry.dispose(); waterMesh.material.dispose(); scene.remove(waterMesh); }
+                while(treeGroup.children.length) treeGroup.remove(treeGroup.children[0]);
+                while(explosionGroup.children.length) explosionGroup.remove(explosionGroup.children[0]);
                 
-                // Color based on height (Sand/Grass/Earth/Rock/Snow)
-                if (coloringHeight < 10) { 
-                    // Y=0 to Y=10: Sand (0xd2b48c) to Grass (0x38761d)
-                    color.set(0xd2b48c).lerp(new THREE.Color(0x38761d), coloringHeight / 10);
-                } else if (coloringHeight < 60) { 
-                    // Y=10 to Y=60: Grass (0x38761d) to Earth (0x8B4513)
-                    color.set(0x38761d).lerp(new THREE.Color(0x8B4513), (coloringHeight - 10) / 50); 
-                } else if (coloringHeight < 150) {
-                    // Y=60 to Y=150: Earth (0x8B4513) to Rock (0x808080)
-                    color.set(0x8B4513).lerp(new THREE.Color(0x808080), (coloringHeight - 60) / 90); 
-                } else {
-                    // Y>150: Rock (0x808080) to Snow (0xffffff)
-                    color.set(0x808080).lerp(new THREE.Color(0xffffff), (coloringHeight - 150) / 100); 
+                birdsDead = false;
+                birdGroup.visible = true;
+                document.body.classList.remove('shake');
+                document.getElementById('main-ui').style.display = 'block';
+
+                const geo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
+                geo.rotateX(-Math.PI / 2);
+                
+                const pos = geo.attributes.position;
+                const colors = [];
+                const color = new THREE.Color();
+                
+                const scale = getVal('heightScale', 120);
+                const freq = getVal('frequency', 0.003);
+                
+                for(let i=0; i<pos.count; i++) {
+                    const x = pos.getX(i);
+                    const z = pos.getZ(i);
+                    
+                    let y = getNoise(x + terrainOffset.x, z + terrainOffset.z, freq, 6) * scale * 1.5;
+                    y += getNoise(x + terrainOffset.x, z + terrainOffset.z, freq * 5, 2) * scale * 0.1;
+                    y -= scale * 0.5;
+                    
+                    pos.setY(i, y);
+                    
+                    const noiseVal = getNoise(x + terrainOffset.x, z + terrainOffset.z, freq*10, 1); 
+                    
+                    if (y < 0) { color.set(0x0a0a2a); } 
+                    else if (y < 12 + noiseVal*5) { color.set(0xEEDDAA); } 
+                    else if (y < 70 + noiseVal*20) { color.set(0x33aa33).lerp(new THREE.Color(0x228822), noiseVal); } 
+                    else if (y < 130 + noiseVal*20) { color.set(0x666666).lerp(new THREE.Color(0x555555), noiseVal); } 
+                    else { color.set(0xFFFFFF); }
+                    colors.push(color.r, color.g, color.b);
                 }
                 
-                colors.push(color.r, color.g, color.b);
-            }
-            
-            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-            geometry.computeVertexNormals();
-            geometry.attributes.position.needsUpdate = true;
+                geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+                geo.computeVertexNormals();
 
-            // 4. Create Mesh
-            const material = new THREE.MeshPhongMaterial({ 
-                vertexColors: true, 
-                shininess: 5,
-            });
-            terrainMesh = new THREE.Mesh(geometry, material);
-            terrainMesh.receiveShadow = true;
-            terrainMesh.castShadow = true;
-            terrainMesh.userData.seed = noiseSeed; 
-            scene.add(terrainMesh);
-            
-            // 5. Place Trees
-            if (treeDensity > 0) {
-                placeTrees(vertices, width, segments, heightScale, treeDensity, noiseSeed);
-            }
+                const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, flatShading: false });
+                terrainMesh = new THREE.Mesh(geo, mat);
+                terrainMesh.receiveShadow = true;
+                terrainMesh.name = "Terrain";
+                scene.add(terrainMesh);
 
-            // 6. Add Water Plane (Always fixed at y=0)
-            let waterMesh = scene.getObjectByName('waterPlane');
-            if (!waterMesh) {
-                const waterGeometry = new THREE.PlaneGeometry(width * 2, depth * 2);
-                waterGeometry.rotateX(-Math.PI / 2);
-                const waterMaterial = new THREE.MeshBasicMaterial({ color: 0x4fc3f7, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
-                waterMesh = new THREE.Mesh(waterGeometry, waterMaterial);
-                waterMesh.name = 'waterPlane';
+                const treeDensity = getVal('treeDensity', 2);
+                if(treeDensity > 0) placeTrees(geo, scale, treeDensity);
+
+                const waterGeo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, 64, 64);
+                waterGeo.rotateX(-Math.PI/2);
+                const waterMat = new THREE.MeshPhongMaterial({
+                    color: 0x0099bb, transparent: true, opacity: 0.75,
+                    shininess: 90, reflectivity: 0.9, side: THREE.DoubleSide
+                });
+                waterMesh = new THREE.Mesh(waterGeo, waterMat);
+                waterMesh.position.y = 5; 
                 scene.add(waterMesh);
+
+                initBirds();
+                initClouds();
+            } catch(e) {
+                console.error("Gen Error", e);
             }
         }
 
-        // --- Tree Placement Logic ---
-        function placeTrees(vertices, terrainWidth, segments, heightScale, seed) {
-            const treeDensity = parseFloat(document.getElementById('treeDensity').value) * 1000;
-            const totalVertices = vertices.length / 3;
+        function placeTrees(geo, maxH, density) {
+            const pos = geo.attributes.position;
+            const count = Math.floor(density * 1200); 
+            const trunkGeo = new THREE.CylinderGeometry(2, 3, 10, 5);
+            const topGeo = new THREE.ConeGeometry(9, 22, 5);
+            const trunkMat = new THREE.MeshLambertMaterial({color: 0x5c4033});
+            const topMat = new THREE.MeshLambertMaterial({color: 0x228b22});
 
-            prng.setSeed(seed + 100); 
+            for(let i=0; i<count; i++) {
+                const idx = Math.floor(prng.random() * pos.count);
+                const y = pos.getY(idx);
+                const x = pos.getX(idx);
+                const z = pos.getZ(idx);
 
-            // Reusing geometry and material is important for performance
-            const trunkGeometry = new THREE.CylinderGeometry(1, 1, 10, 8);
-            const crownGeometry = new THREE.ConeGeometry(5, 10, 8);
-            const trunkMaterial = new THREE.MeshPhongMaterial({ color: 0x654321 });
-            const crownMaterial = new THREE.MeshPhongMaterial({ color: 0x228B22 });
-
-            // Clear previous trees
-            treeGroup.children.forEach(c => {
-                if (c.geometry) c.geometry.dispose();
-                if (c.material) c.material.dispose();
-            });
-            treeGroup.clear();
-
-            const slopeThreshold = 0.5;
-
-            for (let i = 0; i < treeDensity; i++) {
-                const vertexIndex = Math.floor(prng.random() * totalVertices);
-                
-                const x = vertices[vertexIndex * 3];
-                const y = vertices[vertexIndex * 3 + 1];
-                const z = vertices[vertexIndex * 3 + 2];
-
-                // NOTE: This requires computeVertexNormals to have run in generateTerrain
-                const normalY = terrainMesh.geometry.attributes.normal.array[vertexIndex * 3 + 1];
-                const angle = Math.acos(normalY);
-
-                // Check for valid tree placement: above water, on grass/low earth, not too steep
-                if (y < 5 || y > heightScale * 0.4 || angle > slopeThreshold) continue; 
-                
-                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-                trunk.position.set(x, y + 5, z); 
-                trunk.castShadow = true;
-                trunk.receiveShadow = true;
-                
-                const crown = new THREE.Mesh(crownGeometry, crownMaterial);
-                crown.position.set(x, y + 15, z);
-                crown.castShadow = true;
-                crown.receiveShadow = true;
-
-                treeGroup.add(trunk);
-                treeGroup.add(crown);
+                if(y > 15 && y < 150) {
+                    const s = 0.6 + Math.random() * 0.8;
+                    const tree = new THREE.Group();
+                    const trunk = new THREE.Mesh(trunkGeo, trunkMat); trunk.position.y = 5;
+                    const top = new THREE.Mesh(topGeo, topMat); top.position.y = 15;
+                    tree.add(trunk, top);
+                    tree.position.set(x, y, z);
+                    tree.scale.set(s,s,s);
+                    tree.castShadow = true;
+                    tree.receiveShadow = true;
+                    treeGroup.add(tree);
+                }
             }
-            // Dispose of local geometry/material instances after placing trees to prevent memory leaks
-            trunkGeometry.dispose();
-            crownGeometry.dispose();
-            trunkMaterial.dispose();
-            crownMaterial.dispose();
         }
 
-        // --- UI and Event Handling ---
-        function setupControlListeners() {
-            const terrainParams = ['heightScale', 'frequency', 'treeDensity', 'terrainSize'];
-            terrainParams.forEach(id => {
-                const input = document.getElementById(id);
-                const valueSpan = document.getElementById(id + 'Value');
-                
-                input.addEventListener('input', () => {
-                    valueSpan.textContent = (id === 'frequency' || id === 'inclination' || id === 'azimuth') ? parseFloat(input.value).toFixed(3) : input.value;
-                });
-            });
-
-            const skyParams = ['inclination', 'azimuth'];
-            skyParams.forEach(id => {
-                const input = document.getElementById(id);
-                const valueSpan = document.getElementById(id + 'Value');
-                
-                input.addEventListener('input', () => {
-                    valueSpan.textContent = parseFloat(input.value).toFixed(2);
-                    updateSun();
-                });
-            });
-
-            // Set initial display values
-            document.getElementById('heightScaleValue').textContent = document.getElementById('heightScale').value;
-            document.getElementById('frequencyValue').textContent = parseFloat(document.getElementById('frequency').value).toFixed(3);
-            document.getElementById('treeDensityValue').textContent = document.getElementById('treeDensity').value;
-            document.getElementById('terrainSizeValue').textContent = document.getElementById('terrainSize').value;
-            document.getElementById('inclinationValue').textContent = parseFloat(document.getElementById('inclination').value).toFixed(2);
-            document.getElementById('azimuthValue').textContent = parseFloat(document.getElementById('azimuth').value).toFixed(2);
+        // --- DISASTERS ---
+        function triggerDisaster(type) {
+            document.getElementById('disasters-modal').classList.add('hidden');
+            if(type === 'nuke') launchNuke();
+            if(type === 'meteor') launchMeteorShower();
+            if(type === 'flood') launchFlood();
+            if(type === 'wildfire') launchWildfire();
         }
 
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
+        // 1. NUKE
+        function launchNuke() {
+            document.getElementById('main-ui').style.display = 'none';
+            document.getElementById('editToolbar').classList.add('hidden');
+            document.getElementById('controls-modal').classList.add('hidden');
+
+            const targetX = (Math.random() - 0.5) * (TERRAIN_SIZE * 0.7);
+            const targetZ = (Math.random() - 0.5) * (TERRAIN_SIZE * 0.7);
+            const target = new THREE.Vector3(targetX, 0, targetZ);
+
+            const cd = document.getElementById('countdown-overlay');
+            const overlay = document.getElementById('fx-overlay');
+            overlay.style.background = 'radial-gradient(circle, transparent 0%, rgba(220, 38, 38, 0.9) 90%)';
+            cd.style.opacity = 1;
+            overlay.style.opacity = 1;
+            document.body.classList.add('shake');
+            SoundSystem.playSiren();
+
+            let count = 3;
+            cd.innerText = "WARNING";
+
+            const timer = setInterval(() => {
+                if(count > 0) { cd.innerText = count; count--; } 
+                else {
+                    clearInterval(timer);
+                    cd.innerText = "INCOMING";
+                    spawnMissile(target);
+                }
+            }, 1000);
+        }
+
+        function spawnMissile(target) {
+            const geo = new THREE.CylinderGeometry(2, 2, 20, 8);
+            const mat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8 });
+            const missile = new THREE.Mesh(geo, mat);
+            const cone = new THREE.Mesh(new THREE.ConeGeometry(2, 5, 8), new THREE.MeshStandardMaterial({ color: 0xaa0000 }));
+            cone.position.y = -12.5; cone.rotation.x = Math.PI;
+            missile.add(cone);
+            missile.position.set(target.x, 1500, target.z);
+            missile.rotation.x = Math.PI;
+            scene.add(missile);
+
+            followedBird = null; isFlying = false;
+            
+            const startY = 1500;
+            const startTime = Date.now();
+            const duration = 2500;
+
+            function drop() {
+                const elapsed = Date.now() - startTime;
+                const progress = elapsed / duration;
+                if (progress < 1) {
+                    missile.position.y = startY * (1 - Math.pow(progress, 2));
+                    controls.target.copy(missile.position);
+                    controls.update();
+                    requestAnimationFrame(drop);
+                } else {
+                    scene.remove(missile);
+                    detonate(target);
+                }
+            }
+            drop();
+        }
+
+        function detonate(center) {
+            document.body.classList.remove('shake');
+            document.getElementById('countdown-overlay').style.opacity = 0;
+            document.getElementById('fx-overlay').style.opacity = 0;
+            SoundSystem.playExplosion();
+            
+            const flash = new THREE.PointLight(0xffffff, 300, 3000);
+            flash.position.set(center.x, 200, center.z);
+            explosionGroup.add(flash);
+
+            const fireGeo = new THREE.SphereGeometry(1, 32, 32);
+            const fireMat = new THREE.MeshBasicMaterial({ color: 0xffdd88 });
+            const fireball = new THREE.Mesh(fireGeo, fireMat);
+            fireball.position.copy(center);
+            explosionGroup.add(fireball);
+
+            const pos = terrainMesh.geometry.attributes.position;
+            const colors = terrainMesh.geometry.attributes.color;
+            const radius = 350;
+            const verticesToDrop = [];
+
+            for(let i=0; i<pos.count; i++) {
+                const dx = pos.getX(i) - center.x;
+                const dz = pos.getZ(i) - center.z;
+                if(dx*dx + dz*dz < radius*radius) {
+                    verticesToDrop.push({ i: i, dist: Math.sqrt(dx*dx + dz*dz) });
+                    colors.setXYZ(i, 0.05, 0.05, 0.05); 
+                }
+            }
+            colors.needsUpdate = true;
+
+            const animStart = Date.now();
+            function explosionLoop() {
+                const t = (Date.now() - animStart) / 1000;
+                if (t < 6) {
+                    const growth = 1 + t * 40;
+                    fireball.scale.set(growth, growth, growth);
+                    if(t > 0.2) fireMat.color.lerp(new THREE.Color(0x222222), 0.05);
+                    flash.intensity = Math.max(0, 300 - t*60);
+
+                    // Deform terrain dynamically
+                    const shockwaveRadius = t * 200; 
+                    let geoChanged = false;
+                    for(let v of verticesToDrop) {
+                        if (v.dist < shockwaveRadius) {
+                            const currentY = pos.getY(v.i);
+                            const targetDepth = -80 * Math.cos((v.dist/radius) * (Math.PI/2));
+                            if (currentY > targetDepth) {
+                                pos.setY(v.i, THREE.MathUtils.lerp(currentY, targetDepth, 0.1));
+                                geoChanged = true;
+                            }
+                        }
+                    }
+                    if(geoChanged) { pos.needsUpdate = true; terrainMesh.geometry.computeVertexNormals(); }
+                    requestAnimationFrame(explosionLoop);
+                } else {
+                    explosionGroup.clear();
+                    document.getElementById('main-ui').style.display = 'block';
+                }
+            }
+            explosionLoop();
+
+            birdsDead = true;
+            if(followedBird) { followedBird = null; document.getElementById('followBirdBtn').classList.remove('active'); }
+            for(let i=treeGroup.children.length-1; i>=0; i--) {
+                if(treeGroup.children[i].position.distanceTo(center) < radius) treeGroup.remove(treeGroup.children[i]);
+            }
+        }
+
+        // 2. METEOR SHOWER
+        function launchMeteorShower() {
+            document.getElementById('disasters-modal').classList.add('hidden');
+            let meteors = 15;
+            const interval = setInterval(() => {
+                if(meteors > 0) {
+                    spawnMeteor();
+                    meteors--;
+                } else clearInterval(interval);
+            }, 500);
+        }
+
+        function spawnMeteor() {
+            const targetX = (Math.random() - 0.5) * TERRAIN_SIZE;
+            const targetZ = (Math.random() - 0.5) * TERRAIN_SIZE;
+            const startPos = new THREE.Vector3(targetX + 200, 800, targetZ + 200);
+            
+            const met = new THREE.Mesh(new THREE.DodecahedronGeometry(10), new THREE.MeshStandardMaterial({color: 0xff4400, emissive: 0xff0000}));
+            met.position.copy(startPos);
+            explosionGroup.add(met);
+            
+            const startTime = Date.now();
+            function drop() {
+                const t = (Date.now() - startTime) / 1000;
+                met.position.x -= 5; met.position.z -= 5; met.position.y -= 20;
+                
+                if(met.position.y > 20) requestAnimationFrame(drop);
+                else {
+                    explosionGroup.remove(met);
+                    SoundSystem.playExplosion();
+                    const impact = new THREE.Mesh(new THREE.SphereGeometry(30), new THREE.MeshBasicMaterial({color:0xffaa00}));
+                    impact.position.copy(met.position);
+                    explosionGroup.add(impact);
+                    setTimeout(() => explosionGroup.remove(impact), 200);
+                }
+            }
+            drop();
+        }
+
+        // 3. FLASH FLOOD
+        function launchFlood() {
+            document.getElementById('disasters-modal').classList.add('hidden');
+            const startTime = Date.now();
+            const startY = waterMesh.position.y;
+            const targetY = 100;
+            
+            function flood() {
+                const t = (Date.now() - startTime) / 5000; // 5 seconds
+                if(t < 1) {
+                    waterMesh.position.y = THREE.MathUtils.lerp(startY, targetY, t);
+                    requestAnimationFrame(flood);
+                }
+            }
+            flood();
+        }
+
+        // 4. WILDFIRE
+        function launchWildfire() {
+            document.getElementById('disasters-modal').classList.add('hidden');
+            treeGroup.children.forEach((tree, i) => {
+                setTimeout(() => {
+                    tree.children.forEach(mesh => {
+                        mesh.material = new THREE.MeshLambertMaterial({color: 0x220000}); // Burnt
+                    });
+                    if(tree.children[1]) tree.remove(tree.children[1]); 
+                }, Math.random() * 3000);
+            });
+        }
+
+        // --- Other Systems ---
+        function createBirdMesh() {
+            const bird = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.ConeGeometry(2, 8, 5), new THREE.MeshPhongMaterial({color:0xffffff}));
+            body.rotateX(Math.PI/2); bird.add(body);
+            const wingGeo = new THREE.BoxGeometry(3, 0.5, 6);
+            const wingMat = new THREE.MeshPhongMaterial({color:0xeeeeee});
+            const lP = new THREE.Group(); lP.add(new THREE.Mesh(wingGeo, wingMat).translateZ(3));
+            const rP = new THREE.Group(); rP.add(new THREE.Mesh(wingGeo, wingMat).translateZ(-3));
+            bird.add(lP, rP);
+            bird.userData = { lWing: lP, rWing: rP, speed: 1+Math.random(), phase: Math.random()*10 };
+            return bird;
+        }
+        function initBirds() {
+            while(birdGroup.children.length) birdGroup.remove(birdGroup.children[0]);
+            birdObjects = [];
+            const count = getVal('birdCount', 50);
+            for(let i=0; i<count; i++) {
+                const b = createBirdMesh();
+                b.position.set((Math.random()-0.5)*TERRAIN_SIZE, 100+Math.random()*100, (Math.random()-0.5)*TERRAIN_SIZE);
+                b.userData.velocity = new THREE.Vector3(Math.random()-0.5, 0, Math.random()-0.5).normalize();
+                birdGroup.add(b); birdObjects.push(b);
+            }
+        }
+        function updateBirds() {
+            const speed = getVal('birdSpeed', 1.0);
+            birdObjects.forEach(b => {
+                if(birdsDead) { if(b.position.y > 0) { b.position.y -= 3; b.rotation.z += 0.1; } return; }
+                const u = b.userData;
+                b.position.addScaledVector(u.velocity, u.speed * speed);
+                if(Math.abs(b.position.x) > TERRAIN_SIZE/2) u.velocity.x *= -1;
+                if(Math.abs(b.position.z) > TERRAIN_SIZE/2) u.velocity.z *= -1;
+                b.lookAt(b.position.clone().add(u.velocity));
+                const flap = Math.sin(Date.now()*0.01*speed + u.phase);
+                u.lWing.rotation.x = flap; u.rWing.rotation.x = -flap;
+                // Removed SoundSystem.playBird() call
+            });
+        }
+        function updateWater() {
+            if(!waterMesh) return;
+            const t = Date.now() * 0.001;
+            const pos = waterMesh.geometry.attributes.position;
+            for(let i=0; i<pos.count; i++) {
+                const x = pos.getX(i), z = pos.getZ(i);
+                pos.setY(i, Math.sin(x*0.03 + t) + Math.cos(z*0.02 + t*0.8));
+            }
+            pos.needsUpdate = true;
+        }
+        function initClouds() {
+            while(cloudGroup.children.length) cloudGroup.remove(cloudGroup.children[0]);
+            const mat = new THREE.MeshStandardMaterial({color:0xffffff, transparent:true, opacity:0.8});
+            const geo = new THREE.DodecahedronGeometry(15,0);
+            for(let i=0; i<40; i++) {
+                const c = new THREE.Mesh(geo, mat);
+                c.position.set((Math.random()-0.5)*TERRAIN_SIZE, 300+Math.random()*100, (Math.random()-0.5)*TERRAIN_SIZE);
+                c.scale.set(3,1,2);
+                cloudGroup.add(c);
+            }
+        }
+        function updateClouds() {
+            cloudGroup.children.forEach(c => {
+                c.position.x += 0.2;
+                if(c.position.x > TERRAIN_SIZE/2) c.position.x = -TERRAIN_SIZE/2;
+            });
+        }
+
+        // --- EDITOR ---
+        function initBrush() {
+            const geo = new THREE.RingGeometry(1, 1.2, 32);
+            brushMesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({color:0xffff00, transparent:true, opacity:0.8, side:THREE.DoubleSide}));
+            brushMesh.rotation.x = -Math.PI/2;
+            brushMesh.visible = false;
+            scene.add(brushMesh);
+        }
+        function updateBrush() {
+            if(!isEditMode || !terrainMesh) { brushMesh.visible = false; return; }
+            raycaster.setFromCamera(mouse, camera);
+            const hits = raycaster.intersectObject(terrainMesh);
+            if(hits.length > 0) {
+                brushMesh.visible = true;
+                brushMesh.position.copy(hits[0].point);
+                brushMesh.position.y += 2;
+                brushMesh.scale.set(brushSize, brushSize, 1);
+                
+                const mat = brushMesh.material;
+                if(editTool === 'raise') mat.color.setHex(0x10B981);
+                else if(editTool === 'lower') mat.color.setHex(0xEF4444);
+                else mat.color.setHex(0xF59E0B);
+            } else { brushMesh.visible = false; }
+        }
+        function applyEdit() {
+            if(!brushMesh.visible) return;
+            const center = brushMesh.position;
+            const r2 = brushSize * brushSize;
+            const pos = terrainMesh.geometry.attributes.position;
+            let mod = false;
+
+            if(editTool === 'tree') return; // Handled in click
+
+            for(let i=0; i<pos.count; i++) {
+                const dx = pos.getX(i) - center.x, dz = pos.getZ(i) - center.z;
+                if(dx*dx + dz*dz < r2) {
+                    const dist = Math.sqrt(dx*dx + dz*dz);
+                    const falloff = 0.5 * (1 + Math.cos(Math.PI * dist / brushSize));
+                    const amount = (editTool === 'raise' ? 1 : -1) * falloff * 1.5;
+                    pos.setY(i, pos.getY(i) + amount);
+                    mod = true;
+                }
+            }
+            if(mod) { pos.needsUpdate = true; terrainMesh.geometry.computeVertexNormals(); }
+        }
+
+        // --- Interaction ---
+        function setupUI() {
+            document.getElementById('openParamsBtn').onclick = () => document.getElementById('controls-modal').classList.remove('hidden');
+            document.getElementById('closeParamsBtn').onclick = () => document.getElementById('controls-modal').classList.add('hidden');
+            document.getElementById('generateBtn').onclick = () => {
+                document.getElementById('controls-modal').classList.add('hidden');
+                generateWorld(true);
+            };
+            document.getElementById('disastersBtn').onclick = () => document.getElementById('disasters-modal').classList.remove('hidden');
+            document.getElementById('closeDisastersBtn').onclick = () => document.getElementById('disasters-modal').classList.add('hidden');
+            
+            const inputs = ['heightScale', 'frequency', 'treeDensity', 'birdCount', 'birdSpeed', 'inclination', 'azimuth'];
+            inputs.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) {
+                    el.addEventListener('input', (e) => {
+                        const val = document.getElementById(id+'Value');
+                        if(val) val.innerText = e.target.value;
+                        if(id==='inclination' || id==='azimuth') updateSunPosition();
+                    });
+                }
+            });
+
+            document.getElementById('followBirdBtn').onclick = (e) => {
+                const btn = e.currentTarget;
+                if(followedBird) { followedBird = null; btn.classList.remove('active'); }
+                else if(birdObjects.length && !birdsDead) {
+                    followedBird = birdObjects[Math.floor(Math.random()*birdObjects.length)];
+                    btn.classList.add('active');
+                }
+            };
+
+            document.getElementById('editModeBtn').onclick = (e) => {
+                isEditMode = !isEditMode;
+                controls.enabled = !isEditMode;
+                e.currentTarget.classList.toggle('active');
+                document.getElementById('editToolbar').classList.toggle('hidden');
+            };
+
+            document.querySelectorAll('.edit-tool').forEach(b => b.onclick = (e) => {
+                document.querySelectorAll('.edit-tool').forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+                editTool = e.target.dataset.tool;
+            });
+
+            document.getElementById('brushSize').oninput = (e) => brushSize = parseInt(e.target.value);
+            
+            // Editor Tree Paint
+            renderer.domElement.addEventListener('click', () => {
+                if(isEditMode && editTool === 'tree' && brushMesh.visible) {
+                    const t = new THREE.Mesh(new THREE.CylinderGeometry(2,3,10), new THREE.MeshLambertMaterial({color:0x5c4033}));
+                    const top = new THREE.Mesh(new THREE.ConeGeometry(9,22), new THREE.MeshLambertMaterial({color:0x228b22}));
+                    t.position.y = 5; top.position.y = 15;
+                    const g = new THREE.Group(); g.add(t, top);
+                    g.position.copy(brushMesh.position); g.position.y -= 2;
+                    treeGroup.add(g);
+                }
+            });
+        }
+
+        function setupInput() {
+            window.addEventListener('keydown', e => {
+                if("wasd ".includes(e.key)) { isFlying = true; followedBird = null; }
+                if(e.key === 'w') keyState.w = true;
+                if(e.key === 'a') keyState.a = true;
+                if(e.key === 's') keyState.s = true;
+                if(e.key === 'd') keyState.d = true;
+                if(e.key === ' ') keyState.space = true;
+                if(e.key === 'Shift') keyState.shift = true;
+            });
+            window.addEventListener('keyup', e => {
+                if(e.key === 'w') keyState.w = false;
+                if(e.key === 'a') keyState.a = false;
+                if(e.key === 's') keyState.s = false;
+                if(e.key === 'd') keyState.d = false;
+                if(e.key === ' ') keyState.space = false;
+                if(e.key === 'Shift') keyState.shift = false;
+            });
+            window.addEventListener('mousemove', e => {
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            });
+            let md = false;
+            renderer.domElement.addEventListener('mousedown', () => md = true);
+            renderer.domElement.addEventListener('mouseup', () => md = false);
+            setInterval(() => { if(isEditMode && md) applyEdit(); }, 30);
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth/window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // --- Loading Screen Logic ---
-        function hideLoadingScreen() {
-            const loadingScreen = document.getElementById('loading-screen');
-            if (loadingScreen) {
-                loadingScreen.style.opacity = '0';
-                // Immediately disable pointer events so controls and buttons are clickable
-                loadingScreen.style.pointerEvents = 'none'; 
-                
-                // Remove the element from the flow after the fade-out transition
-                setTimeout(() => loadingScreen.classList.add('hidden'), 500); 
-            }
-        }
-        
-        function startApplication() {
-            const startTime = performance.now();
-
-            // 1. Initialize three.js components
-            init(); 
-            
-            // 2. Generate the first terrain
-            generateTerrain(true);
-            
-            // 3. Start the render loop 
-            animate(); 
-
-            // 4. Calculate remaining time for minimum loading duration
-            const elapsedTime = performance.now() - startTime;
-            const remainingTime = Math.max(0, MINIMUM_LOADING_TIME - elapsedTime);
-
-            // 5. Wait for the remaining time, then hide the loading screen.
-            console.log(`Terrain generated in ${elapsedTime.toFixed(2)}ms. Waiting an additional ${remainingTime.toFixed(2)}ms before hiding loading screen.`);
-            
-            setTimeout(() => {
-                hideLoadingScreen();
-            }, remainingTime);
-        }
-
-        // --- Animation Loop ---
         function animate() {
             requestAnimationFrame(animate);
-            // controls.update() is crucial here for damping and constraints, 
-            // even though we disabled its input handlers.
-            controls.update(); 
+            const dt = 0.016;
+            
+            if(waterMesh) updateWater();
+            if(birdGroup.visible) updateBirds(dt);
+            updateClouds();
+            updateBrush();
+
+            if(isFlying) {
+                velocity.set(0,0,0);
+                const dir = new THREE.Vector3();
+                camera.getWorldDirection(dir);
+                const right = new THREE.Vector3().crossVectors(camera.up, dir).normalize();
+                
+                if(keyState.w) velocity.add(dir);
+                if(keyState.s) velocity.sub(dir);
+                if(keyState.d) velocity.add(right);
+                if(keyState.a) velocity.sub(right);
+                if(keyState.space) velocity.y += 0.5;
+                if(keyState.shift) velocity.y -= 0.5;
+                
+                camera.position.addScaledVector(velocity.normalize(), 5);
+                controls.target.copy(camera.position).add(dir);
+            } else if(followedBird) {
+                const target = followedBird.position.clone().add(new THREE.Vector3(0, 30, 60));
+                camera.position.lerp(target, 0.05);
+                controls.target.lerp(followedBird.position, 0.05);
+            }
+
+            controls.update();
             renderer.render(scene, camera);
         }
 
-        window.onload = function () {
-            // Use a small timeout to ensure the loading screen CSS/HTML is rendered before
-            setTimeout(startApplication, 100); 
+        // --- Start ---
+        window.onload = function() {
+            // Give a moment for scripts to process
+            setTimeout(() => {
+                init();
+                generateWorld(true);
+                animate();
+                
+                // Hide loader
+                setTimeout(() => {
+                    const l = document.getElementById('loading-screen');
+                    if(l) {
+                        l.style.opacity = 0;
+                        setTimeout(() => l.style.display = 'none', 500);
+                    }
+                }, 1000);
+            }, 100);
         };
-
     </script>
 </body>
 </html>
